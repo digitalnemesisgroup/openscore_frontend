@@ -78,8 +78,6 @@ export default function VirtualLoanApplyPage() {
     pan_card: { uploaded: false, name: '', size: '', status: 'Pending', preview: null },
     selfie: { uploaded: false, name: '', size: '', status: 'Pending', preview: null },
     agent_selfie: { uploaded: false, name: '', size: '', status: 'Pending', preview: null },
-    address_proof: { uploaded: false, name: '', size: '', status: 'Pending', preview: null },
-    business_proof: { uploaded: false, name: '', size: '', status: 'Not Uploaded', preview: null },
   });
 
   // Document Preview Modal State
@@ -269,6 +267,7 @@ export default function VirtualLoanApplyPage() {
       });
 
       if (res && res.data) {
+        if (res.data.id) setAppId(res.data.id);
         setAppStatus(res.data.status || 'loan_booked');
       }
 
@@ -553,7 +552,7 @@ export default function VirtualLoanApplyPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Required Documents</h3>
                 <span className="text-[11px] font-bold text-slate-500">
-                  {Object.values(docs).filter((d) => d.uploaded).length} of 6 Uploaded
+                  {Object.values(docs).filter((d) => d.uploaded).length} of 4 Uploaded
                 </span>
               </div>
 
@@ -596,24 +595,6 @@ export default function VirtualLoanApplyPage() {
                   capture: 'user',
                   required: true,
                   highlight: true,
-                },
-                {
-                  key: 'address_proof',
-                  title: 'Address Proof',
-                  subtitle: 'Electricity bill / Bank statement',
-                  icon: FileText,
-                  iconBg: 'bg-amber-50 text-amber-600',
-                  accept: 'image/*,.pdf',
-                  required: false,
-                },
-                {
-                  key: 'business_proof',
-                  title: 'Business Proof (Optional)',
-                  subtitle: 'Shop photo / Business license',
-                  icon: Upload,
-                  iconBg: 'bg-slate-100 text-slate-500',
-                  accept: 'image/*,.pdf',
-                  required: false,
                 },
               ].map((docItem) => {
                 const currentDoc = docs[docItem.key];
