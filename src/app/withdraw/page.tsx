@@ -103,66 +103,101 @@ export default function WithdrawPage() {
           </span>
         </div>
 
-        {/* VIRTUAL PREMIUM METAL CREDIT CARD DISPLAY */}
-        <div className="relative rounded-3xl p-5 bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white border border-purple-500/30 shadow-2xl overflow-hidden space-y-5">
-          {/* BACKGROUND DECORATIVE GLOW */}
-          <div className="absolute top-0 right-0 w-48 h-48 bg-purple-600/15 rounded-full blur-2xl pointer-events-none"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-600/15 rounded-full blur-2xl pointer-events-none"></div>
+        {/* VIRTUAL PREMIUM METAL CREDIT CARD DISPLAY (COMPACT REALISTIC METALLIC FINISH) */}
+        <div className="relative rounded-2xl p-4 bg-gradient-to-br from-[#1c1f26] via-[#101217] to-[#1e232e] text-white border border-slate-700/80 shadow-[0_12px_32px_-6px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.25)] overflow-hidden flex flex-col justify-between min-h-[190px] space-y-3">
+          {/* BRUSHED METAL SPECULAR LIGHT SWEEPS & TEXTURE OVERLAYS */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.04] to-transparent pointer-events-none" />
+          <div className="absolute -top-12 -right-12 w-40 h-40 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/[0.03] via-transparent to-transparent pointer-events-none" />
 
           {/* CARD TOP ROW */}
           <div className="flex items-center justify-between relative z-10">
-            <div>
-              <span className="text-[9px] font-black uppercase tracking-widest text-purple-300 bg-purple-900/50 px-2 py-0.5 rounded border border-purple-400/30">
-                PREMIUM METAL CARD
-              </span>
-              <div className="flex items-center gap-1 mt-1 text-slate-300 text-xs font-bold">
-                <span className="text-lg">·))</span>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-700 flex items-center justify-center font-black text-[10px] text-white shadow-xs border border-white/20">
+                OS
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-black tracking-widest text-slate-100 uppercase">
+                    OpenScore
+                  </span>
+                  <span className="text-[7.5px] font-mono font-bold tracking-widest text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded">
+                    TITANIUM METAL
+                  </span>
+                </div>
               </div>
             </div>
+
             <div className="text-right">
-              <span className="text-[9px] font-extrabold uppercase text-slate-400 tracking-wider block">
-                AVAILABLE VALUE
+              <span className="text-[8px] font-bold uppercase text-slate-400 tracking-wider block">
+                Available Value
               </span>
-              <span className="text-2xl font-black text-white tracking-tight">
-                ₹{walletData.available_value.toLocaleString('en-IN')}
-              </span>
-              <span className="text-[9px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full tracking-wider block mt-1">
-                {walletData.status}
-              </span>
+              <div className="flex items-center justify-end gap-1.5">
+                <span className="text-lg font-black text-slate-100 font-mono tracking-tight">
+                  ₹{walletData.available_value.toLocaleString('en-IN')}
+                </span>
+                <span className="text-[8px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 rounded-full tracking-wider">
+                  {walletData.status}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* CARD CHIP AND NUMBER */}
-          <div className="space-y-2 relative z-10 pt-2">
-            <div className="w-10 h-7 rounded-md bg-gradient-to-r from-amber-200 to-amber-400 border border-amber-500/50 shadow-inner flex items-center justify-center">
-              <div className="w-7 h-5 border border-amber-600/40 rounded-xs grid grid-cols-2 gap-0.5">
-                <div className="border-r border-b border-amber-600/40"></div>
-                <div className="border-b border-amber-600/40"></div>
-                <div className="border-r border-amber-600/40"></div>
-                <div></div>
+          {/* CARD MIDDLE: EMV CHIP & EMBOSSED NUMBER */}
+          <div className="flex items-center justify-between relative z-10 py-1">
+            <div className="flex items-center gap-2.5">
+              {/* Gold EMV Chip */}
+              <div className="w-8.5 h-6.5 rounded-md bg-gradient-to-br from-amber-200 via-amber-400 to-yellow-600 border border-amber-600/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_2px_4px_rgba(0,0,0,0.5)] flex items-center justify-center p-0.5">
+                <div className="w-full h-full border border-amber-700/50 rounded-xs grid grid-cols-2 gap-0.5">
+                  <div className="border-r border-b border-amber-700/40" />
+                  <div className="border-b border-amber-700/40" />
+                  <div className="border-r border-amber-700/40" />
+                  <div />
+                </div>
               </div>
+
+              {/* Contactless Wave Icon */}
+              <svg className="w-4 h-4 text-slate-400/80 -rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+              </svg>
             </div>
-            <div className="text-base font-mono tracking-widest font-bold text-slate-200">
+
+            {/* Embossed Metallic Card Number */}
+            <div className="text-sm sm:text-base font-mono tracking-[0.18em] font-bold text-slate-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
               {walletData.card_number}
             </div>
           </div>
 
           {/* CARD BOTTOM ROW */}
-          <div className="flex items-end justify-between relative z-10 border-t border-white/10 pt-3">
-            <div>
-              <span className="text-[8px] uppercase text-slate-400 font-bold block">VALID THRU</span>
-              <span className="text-xs font-mono font-bold text-slate-200">••/••</span>
-              <span className="text-[8px] uppercase text-slate-400 font-bold block mt-1">CARD HOLDER</span>
-              <span className="text-xs font-black uppercase text-purple-200 tracking-wide">
-                {walletData.card_holder}
-              </span>
+          <div className="flex items-end justify-between relative z-10 border-t border-slate-700/50 pt-2 text-xs">
+            <div className="flex items-center gap-4">
+              <div>
+                <span className="text-[7px] uppercase text-slate-400 font-bold block tracking-wider">
+                  Card Holder
+                </span>
+                <span className="text-[11px] font-mono font-bold uppercase text-slate-200 tracking-wide truncate max-w-[130px] block drop-shadow-xs">
+                  {walletData.card_holder}
+                </span>
+              </div>
+              <div>
+                <span className="text-[7px] uppercase text-slate-400 font-bold block tracking-wider">
+                  Expires
+                </span>
+                <span className="text-[11px] font-mono font-bold text-slate-200 drop-shadow-xs">
+                  ••/••
+                </span>
+              </div>
             </div>
+
             <div className="text-right">
-              <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider block">
-                0% INTEREST CREDIT
+              <span className="text-[8.5px] font-black text-emerald-400 uppercase tracking-wider block drop-shadow-xs">
+                0% Interest Credit
               </span>
-              <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block">
-                POWERED BY OPEN SCORE
+              <span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest block">
+                OpenScore Smart Value
               </span>
             </div>
           </div>
