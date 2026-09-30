@@ -9,6 +9,7 @@ interface LoanHeaderProps {
   stepNumber?: number;
   totalSteps?: number;
   backHref?: string;
+  onBackClick?: () => void;
   showDashboardButton?: boolean;
 }
 
