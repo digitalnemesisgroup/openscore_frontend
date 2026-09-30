@@ -109,20 +109,89 @@ export default function EliteCashLoanApplyPage() {
     if (!file) return;
 
     setUploadingDocKey(key);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setDocs((prev) => ({
-        ...prev,
-        [key]: {
-          name: file.name,
-          preview: result,
-          size: (file.size / 1024).toFixed(1) + ' KB',
-        },
-      }));
-      setUploadingDocKey(null);
-    };
-    reader.readAsDataURL(file);
+    const sizeStr =
+      file.size > 1024 * 1024
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        : `${Math.round(file.size / 1024)} KB`;
+
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawUrl = event.target?.result as string;
+        try {
+          const img = new Image();
+          img.onload = () => {
+            const maxDim = 1000;
+            let width = img.width;
+            let height = img.height;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            let finalUrl = rawUrl;
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              finalUrl = canvas.toDataURL('image/jpeg', 0.65);
+            }
+            setDocs((prev) => ({
+              ...prev,
+              [key]: {
+                name: file.name,
+                preview: finalUrl,
+                size: sizeStr,
+              },
+            }));
+            setUploadingDocKey(null);
+          };
+          img.onerror = () => {
+            setDocs((prev) => ({
+              ...prev,
+              [key]: {
+                name: file.name,
+                preview: rawUrl,
+                size: sizeStr,
+              },
+            }));
+            setUploadingDocKey(null);
+          };
+          img.src = rawUrl;
+        } catch {
+          setDocs((prev) => ({
+            ...prev,
+            [key]: {
+              name: file.name,
+              preview: rawUrl,
+              size: sizeStr,
+            },
+          }));
+          setUploadingDocKey(null);
+        }
+      };
+      reader.readAsDataURL(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setDocs((prev) => ({
+          ...prev,
+          [key]: {
+            name: file.name,
+            preview: reader.result as string,
+            size: sizeStr,
+          },
+        }));
+        setUploadingDocKey(null);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleAmountSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {

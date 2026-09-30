@@ -88,8 +88,43 @@ function ElitePaymentContent() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      setPaymentScreenshot(event.target?.result as string);
-      setError('');
+      const rawUrl = event.target?.result as string;
+      try {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1200;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          let finalUrl = rawUrl;
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            finalUrl = canvas.toDataURL('image/jpeg', 0.7);
+          }
+          setPaymentScreenshot(finalUrl);
+          setError('');
+        };
+        img.onerror = () => {
+          setPaymentScreenshot(rawUrl);
+          setError('');
+        };
+        img.src = rawUrl;
+      } catch {
+        setPaymentScreenshot(rawUrl);
+        setError('');
+      }
     };
     reader.readAsDataURL(file);
   };
