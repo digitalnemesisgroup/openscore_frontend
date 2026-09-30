@@ -7,6 +7,7 @@ import LoanHeader from '@/components/LoanHeader';
 import {
   CheckCircle2,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Upload,
   Eye,
@@ -32,6 +33,9 @@ import {
   QrCode,
   Copy,
   ExternalLink,
+  Zap,
+  BadgeCheck,
+  Trash2,
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 
@@ -189,10 +193,66 @@ export default function VirtualLoanApplyPage() {
     fileInputRefs.current[key]?.click();
   };
 
-  // Step 3: Payment Modal & Auto Verify Status
+  // Step 3: Payment & Fee Consent states
+  const [feePaymentStep, setFeePaymentStep] = useState<'consent' | 'pay'>('consent');
+  const [consentChecked, setConsentChecked] = useState<boolean>(false);
+  const [paymentScreenshot, setPaymentScreenshot] = useState<string>('');
   const [payingFee, setPayingFee] = useState<boolean>(false);
   const [autoVerified, setAutoVerified] = useState<boolean | null>(null);
   const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState<boolean>(false);
+
+  // Screenshot Upload Handler with Canvas Compression
+  const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload a valid image file (PNG, JPG, JPEG).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const rawUrl = event.target?.result as string;
+      try {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1000;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            setPaymentScreenshot(canvas.toDataURL('image/jpeg', 0.65));
+          } else {
+            setPaymentScreenshot(rawUrl);
+          }
+          setError('');
+        };
+        img.onerror = () => {
+          setPaymentScreenshot(rawUrl);
+          setError('');
+        };
+        img.src = rawUrl;
+      } catch {
+        setPaymentScreenshot(rawUrl);
+        setError('');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Missing Document Request from Admin state
   const [additionalDocsRequest, setAdditionalDocsRequest] = useState<string | null>(null);
@@ -348,16 +408,28 @@ export default function VirtualLoanApplyPage() {
   };
 
   // Handle Fee Payment in Step 3
-  const handlePayFee = async () => {
-    setPayingFee(true);
+  const handlePayFee = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError('');
+
+    if (!utrInput.trim() || utrInput.trim().length < 6) {
+      setError('Please enter a valid 12-digit UTR / Transaction Reference number.');
+      return;
+    }
+    if (!paymentScreenshot) {
+      setError('Payment screenshot receipt is mandatory. Please upload a screenshot of your UPI payment.');
+      return;
+    }
+
+    setPayingFee(true);
     try {
       const targetId = appId || 1;
       const res = await apiRequest(`/loan/virtual-apply/${targetId}/pay-fee`, {
         method: 'POST',
         body: JSON.stringify({
-          transaction_id: 'TXN' + Math.floor(100000000 + Math.random() * 900000000),
-          payment_method: 'UPI / Wallet',
+          transaction_id: utrInput.trim(),
+          payment_proof: paymentScreenshot,
+          payment_method: 'UPI / QR',
         }),
       });
 
@@ -367,7 +439,7 @@ export default function VirtualLoanApplyPage() {
         if (res.data) setAppStatus(res.data.status);
       }
     } catch (err: any) {
-      setError(err.message || 'Fee payment failed. Please try again.');
+      setError(err.message || 'Fee payment submission failed. Please try again.');
     } finally {
       setPayingFee(false);
     }
@@ -383,10 +455,17 @@ export default function VirtualLoanApplyPage() {
             ? 'Apply for Virtual Loan'
             : currentStep === 2
             ? 'KYC & Documents'
-            : 'Loan Approved / Booked'
+            : feePaymentStep === 'consent'
+            ? 'Fee Authorization & Consent'
+            : 'UPI Payment & Proof'
         }
         stepNumber={isValidating ? 2 : currentStep}
         totalSteps={3}
+        onBackClick={
+          currentStep === 3 && feePaymentStep === 'pay'
+            ? () => setFeePaymentStep('consent')
+            : undefined
+        }
       />
 
       <div className="p-4 space-y-4 flex-1 pb-36 animate-in fade-in duration-300 overflow-y-auto">
@@ -929,56 +1008,186 @@ export default function VirtualLoanApplyPage() {
           </div>
         )}
 
-        {/* STEP 3: LOAN APPROVED / BOOKED (SCREEN 4 OF IMAGE) */}
-        {currentStep === 3 && !isValidating && (
-          <div className="space-y-4 animate-in zoom-in-95 duration-200">
-            {/* GREEN CHECK CONFETTI BANNER */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 text-center space-y-3 shadow-md relative overflow-hidden">
-              <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-lg ring-4 ring-emerald-100">
-                <Check className="w-10 h-10 stroke-[3]" />
-              </div>
-
+        {/* STEP 3 - SUBSTEP 1: ITEMIZE BREAKDOWN & MANDATORY CONSENT */}
+        {currentStep === 3 && !isValidating && feePaymentStep === 'consent' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            {/* Top Reference & Breadcrumb Header */}
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Loan Approved!</h2>
-                <p className="text-xs text-slate-500 font-medium max-w-xs mx-auto mt-1">
-                  Congratulations <span className="font-bold text-slate-900">{fullName}</span> Your loan has been approved and booked for you.
+                <span className="text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-900 px-2.5 py-0.5 rounded-full border border-blue-200 inline-flex items-center gap-1 mb-1">
+                  <Zap className="w-3 h-3 text-blue-600 fill-blue-600" />
+                  Step 1 of 2: Fee Consent
+                </span>
+                <h1 className="text-xl font-black text-slate-900">Processing Fee &amp; Consent</h1>
+                <p className="text-xs text-slate-500 font-medium">
+                  Review fee breakdown and confirm authorization
                 </p>
               </div>
+              <span className="text-[10px] font-mono font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                #{appId ? `OSV${appId}` : 'OSV-2026'}
+              </span>
+            </div>
 
-              {/* APPROVED LOAN SUMMARY BOX */}
-              <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl grid grid-cols-2 gap-2 text-left pt-3">
+            {error && (
+              <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-2xl font-bold flex items-start gap-2 shadow-2xs">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Application Overview Mini Card */}
+            <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white rounded-3xl p-4.5 shadow-md space-y-3">
+              <div className="flex items-center justify-between border-b border-blue-800/60 pb-2.5">
+                <span className="text-[11px] font-bold text-blue-200 flex items-center gap-1.5">
+                  <BadgeCheck className="w-4 h-4 text-emerald-400" />
+                  Documents Verified &amp; Pre-Approved
+                </span>
+                <span className="text-[10px] font-mono font-bold bg-blue-500/20 text-blue-200 px-2 py-0.5 rounded-md border border-blue-400/30">
+                  Virtual Cash Limit
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block">Approved Loan Amount</span>
-                  <span className="text-xl font-black text-slate-900">
-                    ₹ {selectedAmount.toLocaleString('en-IN')}
-                  </span>
+                  <span className="text-[10px] text-blue-300 block font-medium">Applicant</span>
+                  <span className="font-black text-white">{fullName}</span>
                 </div>
-
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block">{feeLabel}</span>
-                  <span className="text-sm font-black text-blue-700">
-                    ₹ {currentFee.toLocaleString('en-IN')}
-                  </span>
-                </div>
-
-                <div className="col-span-2 pt-2 border-t border-slate-200 flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-600">Status</span>
-                  <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-black px-2.5 py-0.5 rounded-full">
-                    Amount Booked
+                  <span className="text-[10px] text-blue-300 block font-medium">Pre-Approved Limit</span>
+                  <span className="font-black text-emerald-400">
+                    ₹{selectedAmount.toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
+              <div className="pt-2 border-t border-blue-900/60 flex items-center justify-between text-[11px]">
+                <span className="text-blue-300">Status</span>
+                <span className="bg-blue-500/20 text-blue-200 border border-blue-400/40 px-2 py-0.5 rounded-full font-bold">
+                  Pre-Approved (Pending Activation Review)
+                </span>
+              </div>
             </div>
 
-            {/* YELLOW ALERT CALLOUT */}
-            <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-2xl flex items-start gap-3 text-amber-900">
-              <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-xs font-bold leading-relaxed">
-                Your loan amount is booked and will be available in your wallet after fee payment and final verification.
-              </p>
+            {/* Itemized Fee Breakdown Card */}
+            <div className="bg-white border-2 border-blue-200 rounded-3xl p-4 shadow-sm space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  Itemized Fee Breakdown
+                </span>
+                <span className="text-[10px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                  100% Transparent
+                </span>
+              </div>
+
+              {(() => {
+                const loginFee = 500;
+                const docFee = 200;
+                const riskFee = Math.max(0, currentFee - 700);
+                return (
+                  <div className="space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between text-slate-600 font-medium">
+                      <span>1. Application Login &amp; Portal Fee</span>
+                      <span className="font-bold text-slate-900">₹{loginFee.toLocaleString('en-IN')}.00</span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-600 font-medium">
+                      <span>2. KYC &amp; Documentation Processing</span>
+                      <span className="font-bold text-slate-900">₹{docFee.toLocaleString('en-IN')}.00</span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-600 font-medium">
+                      <span>3. Express Sanction &amp; Risk Check</span>
+                      <span className="font-bold text-slate-900">₹{riskFee.toLocaleString('en-IN')}.00</span>
+                    </div>
+
+                    <div className="pt-2.5 border-t border-dashed border-slate-200 flex items-center justify-between text-sm font-black text-blue-950">
+                      <span>Total Payable Amount</span>
+                      <span className="text-lg text-blue-700 font-mono font-black">
+                        ₹{currentFee.toLocaleString('en-IN')}.00
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* RED/CORAL NEXT STEP CARD WITH DYNAMIC UPI QR & ID */}
+            {/* Payment Consent & Declaration Section */}
+            <div className="bg-blue-50/70 border-2 border-blue-200 rounded-3xl p-4 space-y-3 shadow-2xs">
+              <div className="flex items-center gap-1.5 text-blue-950 font-black text-xs">
+                <FileText className="w-4 h-4 text-blue-700" />
+                <span>Applicant Consent &amp; Declaration</span>
+              </div>
+
+              <label className="flex items-start gap-3 cursor-pointer select-none bg-white p-3.5 rounded-2xl border border-blue-200 shadow-2xs hover:border-blue-400 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(e) => {
+                    setConsentChecked(e.target.checked);
+                    if (error) setError('');
+                  }}
+                  className="w-5 h-5 rounded-md text-blue-600 focus:ring-blue-500 border-slate-300 mt-0.5 cursor-pointer shrink-0 accent-blue-600"
+                />
+                <span className="text-[11px] text-slate-700 leading-relaxed font-medium">
+                  <strong className="text-slate-900 font-bold">I hereby agree and give voluntary consent</strong> to pay the nominal processing fee of{' '}
+                  <strong className="text-blue-700 font-bold">₹{currentFee.toLocaleString('en-IN')}.00</strong> for my loan application. I understand that this fee covers portal verification and document processing, and final loan approval &amp; wallet limit activation will be granted upon admin review.
+                </span>
+              </label>
+
+              <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium px-1">
+                <Lock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span>Secure encrypted authorization. Next step will display UPI payment options.</span>
+              </div>
+            </div>
+
+            {/* Proceed to Payment Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!consentChecked) {
+                  setError('Please check the consent box to agree before proceeding to payment.');
+                  return;
+                }
+                setError('');
+                setFeePaymentStep('pay');
+              }}
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-black text-sm rounded-2xl shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <span>Proceed to Payment</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* STEP 3 - SUBSTEP 2: SCAN & PAY VIA UPI */}
+        {currentStep === 3 && !isValidating && feePaymentStep === 'pay' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            {/* Top Reference & Breadcrumb Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full border border-emerald-200 inline-flex items-center gap-1 mb-1">
+                  <QrCode className="w-3 h-3 text-emerald-600" />
+                  Step 2 of 2: Scan &amp; Pay
+                </span>
+                <h1 className="text-xl font-black text-slate-900">Scan &amp; Pay via UPI</h1>
+                <p className="text-xs text-slate-500 font-medium">
+                  Complete payment and submit transaction details
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFeePaymentStep('consent')}
+                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 cursor-pointer"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                <span>Back</span>
+              </button>
+            </div>
+
+            {error && (
+              <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-2xl font-bold flex items-start gap-2 shadow-2xs">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
             {(() => {
               const upiId = feeConfig?.upi_id || 'flipflops@upi';
               const payeeName = feeConfig?.upi_payee_name || 'OpenScore Finance';
@@ -994,106 +1203,158 @@ export default function VirtualLoanApplyPage() {
               };
 
               return (
-                <div className="bg-gradient-to-br from-rose-50 via-white to-red-50 border-2 border-rose-300 p-4 rounded-3xl space-y-4 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-md uppercase tracking-wider">
-                      Next Step: Processing Fee
-                    </span>
-                    <span className="text-xs font-black text-rose-700 font-mono">
-                      ₹ {currentFee.toLocaleString('en-IN')}.00
-                    </span>
-                  </div>
-
-                  <p className="text-xs font-bold text-slate-800">
-                    Pay the applicable activation processing fee to official UPI ID to activate your limit.
-                  </p>
-
-                  {/* UPI ID COPY BOX */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-3 space-y-2 shadow-2xs">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
-                      <span>Official Receiving UPI ID:</span>
-                      <span className="text-emerald-700 font-semibold">{payeeName}</span>
+                <div className="space-y-4">
+                  {/* QR Card */}
+                  <div className="bg-white border-2 border-slate-200 rounded-3xl p-5 text-center space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                        <QrCode className="w-4 h-4 text-blue-600" />
+                        Scan &amp; Pay Using Any UPI App
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500">
+                        GPay, PhonePe, Paytm
+                      </span>
                     </div>
 
-                    <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-                      <span className="font-mono font-black text-xs text-slate-900 truncate mr-2">
-                        {upiId}
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl inline-block shadow-inner">
+                      <img
+                        src={qrCodeImgUrl}
+                        alt="UPI QR Code"
+                        className="w-48 h-48 object-contain mx-auto rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="text-xs text-slate-500 font-medium block">Total Payable Amount</span>
+                      <span className="text-2xl font-black text-blue-700 font-mono">
+                        ₹{currentFee.toLocaleString('en-IN')}.00
                       </span>
+                    </div>
+
+                    {/* Official UPI ID Copy */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center justify-between text-left">
+                      <div className="min-w-0 mr-2">
+                        <span className="text-[10px] text-slate-400 font-bold block uppercase">Official Payee UPI ID</span>
+                        <span className="text-xs font-black text-slate-900 font-mono truncate block">
+                          {upiId}
+                        </span>
+                      </div>
                       <button
                         type="button"
                         onClick={handleCopyUpi}
-                        className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg border border-blue-200 transition-all flex items-center gap-1 shrink-0"
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl flex items-center gap-1 shrink-0 shadow-xs cursor-pointer"
                       >
-                        {copiedUpi ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            <span className="text-emerald-700">Copied!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>Copy</span>
-                          </>
-                        )}
+                        {copiedUpi ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedUpi ? 'Copied' : 'Copy'}</span>
                       </button>
                     </div>
+
+                    {/* Direct UPI App launch button */}
+                    <a
+                      href={upiPayUrl}
+                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-all text-center block cursor-pointer"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      <span>Pay ₹{currentFee.toLocaleString('en-IN')} via UPI App</span>
+                    </a>
                   </div>
 
-                  {/* QR CODE DISPLAY */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-4 text-center space-y-2 shadow-2xs flex flex-col items-center">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                      <QrCode className="w-3.5 h-3.5 text-indigo-600" /> Scan QR via GPay / PhonePe / Paytm
-                    </span>
-                    <div className="p-2 bg-white border border-slate-200 rounded-2xl shadow-inner inline-block">
-                      <img
-                        src={qrCodeImgUrl}
-                        alt="UPI Payment QR Code"
-                        className="w-40 h-40 object-contain mx-auto rounded-lg"
-                      />
+                  {/* Payment Details Form */}
+                  <form onSubmit={handlePayFee} className="bg-white border-2 border-slate-200 rounded-3xl p-5 space-y-4 shadow-sm">
+                    <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 border-b border-slate-100 pb-2">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                      <span>Enter Payment Details &amp; Proof</span>
                     </div>
-                    <p className="text-[10px] text-slate-400 font-medium">
-                      Scan or tap below to launch your default UPI app
-                    </p>
-                  </div>
 
-                  {/* DIRECT UPI APP INTENT LINK */}
-                  <a
-                    href={upiPayUrl}
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-all text-center block"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    <span>Pay ₹{currentFee.toLocaleString('en-IN')} via UPI App</span>
-                  </a>
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                        12-Digit Transaction Reference (UTR / Txn ID) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={utrInput}
+                        onChange={(e) => setUtrInput(e.target.value)}
+                        placeholder="e.g. 428192839201"
+                        className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-mono"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        You can copy the 12-digit UTR from your UPI payment success screen.
+                      </p>
+                    </div>
 
-                  {/* PAY & RECORD FEE BUTTON */}
-                  <button
-                    onClick={handlePayFee}
-                    disabled={payingFee}
-                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
-                  >
-                    {payingFee ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Verifying & Recording Payment...</span>
-                      </>
-                    ) : (
-                      <span>I Have Paid ₹ {currentFee.toLocaleString('en-IN')} (Submit)</span>
-                    )}
-                  </button>
+                    {/* Upload Payment Receipt Screenshot */}
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                        Upload Payment Receipt Screenshot * (Mandatory)
+                      </label>
+                      <div className="border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center space-y-2 bg-slate-50 hover:bg-slate-100/60 transition-colors">
+                        {paymentScreenshot ? (
+                          <div className="space-y-2">
+                            <div className="relative w-32 h-32 mx-auto rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                              <img
+                                src={paymentScreenshot}
+                                alt="Payment Receipt"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="flex items-center justify-center gap-2">
+                              <label className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-100">
+                                Change Screenshot
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleScreenshotUpload}
+                                  className="hidden"
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => setPaymentScreenshot('')}
+                                className="px-2.5 py-1 bg-rose-50 text-rose-700 text-xs font-bold rounded-lg border border-rose-200 hover:bg-rose-100"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer block space-y-1.5 py-2">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto">
+                              <Upload className="w-5 h-5" />
+                            </div>
+                            <span className="text-xs font-bold text-slate-800 block">Tap to Upload Payment Screenshot</span>
+                            <span className="text-[10px] text-slate-400 block">PNG, JPG, JPEG accepted (Without screenshot, verification cannot proceed)</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleScreenshotUpload}
+                              className="hidden"
+                            />
+                          </label>
+                        )}
+                      </div>
+                    </div>
 
-                  {/* SECONDARY BUTTON */}
-                  <button
-                    onClick={() => router.push('/loan/virtual-loan/dashboard')}
-                    className="w-full py-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all"
-                  >
-                    View Loan Details
-                  </button>
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-[11px] font-bold flex items-start gap-2">
+                      <Lock className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <span>🔒 Fast-Track Admin Review: Your application and fee payment will be reviewed by admin immediately. Disbursal/Wallet limit activation follows admin approval.</span>
+                    </div>
 
-                  <div className="text-center pt-1">
-                    <span className="text-[11px] font-bold text-slate-500 flex items-center justify-center gap-1">
-                      <Lock className="w-3 h-3 text-emerald-600" /> 100% Secure Payment • Instant Approval
-                    </span>
-                  </div>
+                    <button
+                      type="submit"
+                      disabled={payingFee}
+                      className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-black text-sm rounded-2xl shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      {payingFee ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Submitting Application...</span>
+                        </>
+                      ) : (
+                        <span>Submit Application for Admin Review</span>
+                      )}
+                    </button>
+                  </form>
                 </div>
               );
             })()}
