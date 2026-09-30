@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import MobileContainer from '@/components/MobileContainer';
 import LoanHeader from '@/components/LoanHeader';
 import { apiRequest } from '@/lib/api';
-import { Hammer, CreditCard, ShieldCheck, ArrowRight, RefreshCw, CheckCircle2, Clock, Lock, AlertCircle, QrCode } from 'lucide-react';
+import { Hammer, CreditCard, ShieldCheck, ArrowRight, RefreshCw, CheckCircle2, Clock, Lock, AlertCircle, QrCode, Upload, Image as ImageIcon, Trash2, Eye } from 'lucide-react';
 
 function ConstructionFeePaymentForm() {
   const router = useRouter();
@@ -17,10 +17,37 @@ function ConstructionFeePaymentForm() {
   const [appData, setAppData] = useState<any>(null);
   const [txId, setTxId] = useState('');
   const [submittedTxId, setSubmittedTxId] = useState('');
+  const [paymentScreenshot, setPaymentScreenshot] = useState<string>('');
+  const [submittedScreenshot, setSubmittedScreenshot] = useState('');
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [paymentSubmitted, setPaymentSubmitted] = useState(false);
   const [isVerifiedByAdmin, setIsVerifiedByAdmin] = useState(false);
   const [assignedTier, setAssignedTier] = useState<string>('');
   const [error, setError] = useState('');
+
+  // Handle Screenshot Upload
+  const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload a valid image file (PNG, JPG, JPEG).');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Screenshot size must be under 10MB.');
+      return;
+    }
+
+    setError('');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setPaymentScreenshot(base64);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const checkAppStatus = async (id: string) => {
     try {
@@ -30,6 +57,9 @@ function ConstructionFeePaymentForm() {
         setAppData(app);
         if (app.transaction_id) {
           setSubmittedTxId(app.transaction_id);
+        }
+        if (app.payment_screenshot) {
+          setSubmittedScreenshot(app.payment_screenshot);
         }
 
         const feeStatus = (app.fee_payment_status || '').toLowerCase();
@@ -88,6 +118,10 @@ function ConstructionFeePaymentForm() {
       setError('Please enter a valid 12-Digit Transaction / UTR reference number.');
       return;
     }
+    if (!paymentScreenshot) {
+      setError('Please upload a screenshot of your successful UPI payment for Admin Verification.');
+      return;
+    }
 
     setSubmitting(true);
     setError('');
@@ -96,13 +130,15 @@ function ConstructionFeePaymentForm() {
         method: 'POST',
         body: JSON.stringify({
           transaction_id: txId.trim(),
-          payment_status: 'paid_pending_admin_verification',
+          payment_screenshot: paymentScreenshot,
+          payment_status: 'pending_verification',
           fee_payment_status: 'Submitted (Pending Admin Verification)',
         }),
       });
 
       if (res.data) {
         setSubmittedTxId(txId.trim());
+        setSubmittedScreenshot(paymentScreenshot);
         setPaymentSubmitted(true);
         const feeStat = (res.data.fee_payment_status || res.data.payment_status || '').toLowerCase();
         if (feeStat === 'approved' || res.data.status?.includes('submitted') || res.data.status?.includes('approved')) {
@@ -118,6 +154,25 @@ function ConstructionFeePaymentForm() {
     }
   };
 
+  const [feeConfig, setFeeConfig] = useState<any>({
+    upi_id: 'flipflops@upi',
+    upi_payee_name: 'OpenScore Finance',
+    construction_loan_fee_type: 'fixed',
+    construction_loan_fee_value: 999,
+  });
+
+  useEffect(() => {
+    async function fetchFeeConfig() {
+      try {
+        const res = await apiRequest('/settings/fee-config');
+        if (res && res.data) {
+          setFeeConfig(res.data);
+        }
+      } catch (err) {}
+    }
+    fetchFeeConfig();
+  }, []);
+
   const handleProceedToNextStep = () => {
     const targetId = appId || (typeof window !== 'undefined' ? localStorage.getItem('active_loan_app_id') : null);
     if (!isVerifiedByAdmin) {
@@ -127,9 +182,25 @@ function ConstructionFeePaymentForm() {
     router.push(`/loan/apply/construction-loan/select-partner${targetId ? `?id=${targetId}` : ''}`);
   };
 
-  const feeAmount = Number(appData?.processing_fee || appData?.fee_amount || 999);
-  const upiId = 'flipflops@upi';
-  const constructionQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(`upi://pay?pa=${upiId}&pn=OpenScore%20Finance&am=${feeAmount}&cu=INR`)}`;
+  // Priority: 1. Application-specific fee set by admin -> 2. Global fee config (fixed vs %)
+  let calculatedFee = 999;
+  if (appData?.processing_fee || appData?.fee_amount) {
+    calculatedFee = Number(appData.processing_fee || appData.fee_amount);
+  } else if (feeConfig) {
+    const rateOrVal = Number(feeConfig.construction_loan_fee_value ?? 999);
+    if (feeConfig.construction_loan_fee_type === 'percentage') {
+      const principal = Number(appData?.required_amount || appData?.applied_amount || 100000);
+      calculatedFee = Math.max(1, Math.round(principal * (rateOrVal / 100)));
+    } else {
+      calculatedFee = rateOrVal;
+    }
+  }
+
+  const feeAmount = calculatedFee;
+  const upiId = feeConfig?.upi_id || 'flipflops@upi';
+  const payeeName = feeConfig?.upi_payee_name || 'OpenScore Finance';
+  const constructionQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(`upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${feeAmount}&cu=INR`)}`;
+
 
   const isWithoutCibil = (appData?.loan_type || '').includes('no_cibil');
 
@@ -161,13 +232,15 @@ function ConstructionFeePaymentForm() {
         </div>
       )}
 
-      {/* Payment Summary Box */}
-      <div className="bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 text-white rounded-3xl p-5 shadow-xl space-y-2 text-center">
-        <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-white px-2.5 py-0.5 rounded-full">
-          CONSTRUCTION LOAN FILE PROCESSING FEE
+      {/* Fee Amount Box */}
+      <div className="bg-gradient-to-br from-emerald-800 via-teal-800 to-slate-900 text-white p-5 rounded-3xl text-center space-y-1 relative overflow-hidden shadow-md">
+        <span className="text-[10px] font-extrabold uppercase text-emerald-200 tracking-wider">
+          CONSTRUCTION PROCESSING & STAMPING FEE
         </span>
-        <h2 className="text-3xl font-black text-emerald-300">₹{feeAmount.toLocaleString('en-IN')}.00</h2>
-        <p className="text-xs text-emerald-100 font-medium">Nominal application fee for partner identification & review</p>
+        <h2 className="text-3xl font-black">₹{feeAmount.toLocaleString('en-IN')}.00</h2>
+        <p className="text-[11px] text-emerald-100 flex items-center justify-center gap-1 font-semibold">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" /> 100% Encrypted & Protected Fee Gateway
+        </p>
       </div>
 
       {!paymentSubmitted ? (
@@ -178,7 +251,7 @@ function ConstructionFeePaymentForm() {
               {/* eslint-disable-next-html-link */}
               <img
                 src={constructionQrUrl}
-                alt="UPI QR Code"
+                alt="Construction UPI QR"
                 className="w-44 h-44 object-contain rounded-xl"
               />
               <span className="absolute -bottom-3 text-[9px] font-black bg-emerald-600 text-white px-3 py-1 rounded-full shadow-md uppercase tracking-wider">
@@ -187,16 +260,15 @@ function ConstructionFeePaymentForm() {
             </div>
 
             <div className="pt-2 text-center space-y-1">
-              <p className="text-[11px] font-medium text-slate-500">Official UPI ID for Direct Transfer:</p>
+              <p className="text-[11px] font-medium text-slate-500">Official UPI ID for Construction Fee:</p>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-xl text-slate-800 font-mono font-bold text-xs border border-slate-200">
                 <span>{upiId}</span>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText(upiId);
-                    alert('UPI ID flipflops@upi copied to clipboard!');
+                    if (typeof navigator !== 'undefined') navigator.clipboard.writeText(upiId);
                   }}
-                  className="text-[10px] text-emerald-600 hover:text-emerald-700 font-sans font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 cursor-pointer"
+                  className="p-1 text-slate-500 hover:text-emerald-600 transition-colors text-xs font-bold"
                 >
                   Copy
                 </button>
@@ -226,9 +298,75 @@ function ConstructionFeePaymentForm() {
             />
           </div>
 
+          {/* Payment Screenshot Upload */}
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-800">
+                Upload Payment Screenshot / Receipt *
+              </label>
+              <span className="text-[10px] text-slate-500 font-semibold">PNG, JPG up to 10MB</span>
+            </div>
+
+            {!paymentScreenshot ? (
+              <label className="border-2 border-dashed border-emerald-300 hover:border-emerald-500 bg-white rounded-2xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs">
+                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center">
+                  <Upload className="w-5 h-5" />
+                </div>
+                <div className="text-center">
+                  <span className="text-xs font-bold text-emerald-700 hover:underline">Click to Upload Payment Screenshot</span>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Attach the UPI payment receipt screenshot</p>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleScreenshotChange}
+                  className="hidden"
+                />
+              </label>
+            ) : (
+              <div className="p-3 bg-white border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shrink-0 relative">
+                    {/* eslint-disable-next-html-link */}
+                    <img
+                      src={paymentScreenshot}
+                      alt="Payment Screenshot"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Screenshot Attached</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Ready for Admin Verification</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewModalOpen(true)}
+                    className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                    title="Preview Screenshot"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentScreenshot('')}
+                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                    title="Remove Screenshot"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={handleSubmitPayment}
-            disabled={submitting || !txId}
+            disabled={submitting || !txId || !paymentScreenshot}
             className="w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 active:scale-[0.99]"
           >
             {submitting ? (
@@ -239,6 +377,7 @@ function ConstructionFeePaymentForm() {
             ) : (
               <>
                 <span>Submit Fee Payment for Admin Verification →</span>
+                <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
@@ -263,10 +402,32 @@ function ConstructionFeePaymentForm() {
                 <p className="text-xs text-amber-900 font-mono font-bold mt-1">
                   Transaction Ref: {submittedTxId || txId}
                 </p>
+
+                {(submittedScreenshot || paymentScreenshot) && (
+                  <div className="mt-3 p-2 bg-white rounded-xl border border-amber-200 inline-flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-200 shrink-0">
+                      {/* eslint-disable-next-html-link */}
+                      <img
+                        src={submittedScreenshot || paymentScreenshot}
+                        alt="Receipt"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-700">Payment Screenshot Attached</span>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewModalOpen(true)}
+                      className="text-emerald-600 hover:underline text-[10px] font-bold ml-1 cursor-pointer"
+                    >
+                      View
+                    </button>
+                  </div>
+                )}
+
                 <p className="text-xs text-slate-600 font-medium mt-2 leading-relaxed">
                   {isWithoutCibil
-                    ? 'Your details & processing fee have been submitted. OpenScore Admin is evaluating your credit profile to approve and assign your application under Low CIBIL or High CIBIL loan tier.'
-                    : 'Your fee payment has been submitted successfully. Admin is verifying your payment. Once approved, the button below will unlock automatically.'}
+                    ? 'Your details & processing fee screenshot have been submitted. OpenScore Admin is evaluating your credit profile to approve and assign your application under Low CIBIL or High CIBIL loan tier.'
+                    : 'Your fee payment and screenshot have been submitted successfully. Admin is verifying your payment. Once approved, the button below will unlock automatically.'}
                 </p>
               </div>
               <div className="p-3 bg-white/80 rounded-xl border border-amber-200 text-[11px] text-amber-900 font-bold flex items-center justify-center gap-2">
@@ -320,6 +481,35 @@ function ConstructionFeePaymentForm() {
               </>
             )}
           </button>
+        </div>
+      )}
+
+      {/* Screenshot Preview Modal */}
+      {previewModalOpen && (
+        <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-4 space-y-3 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h4 className="text-xs font-black text-slate-900">Payment Screenshot Preview</h4>
+              <button
+                type="button"
+                onClick={() => setPreviewModalOpen(false)}
+                className="text-slate-400 hover:text-slate-700 text-xs font-bold px-2 py-1 bg-slate-100 rounded-lg cursor-pointer"
+              >
+                ✕ Close
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-auto rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center p-2">
+              {/* eslint-disable-next-html-link */}
+              <img
+                src={submittedScreenshot || paymentScreenshot}
+                alt="Receipt Preview"
+                className="max-w-full max-h-full object-contain rounded-lg shadow-sm"
+              />
+            </div>
+            <p className="text-[11px] font-mono text-center text-slate-600 font-bold">
+              Ref: {submittedTxId || txId}
+            </p>
+          </div>
         </div>
       )}
     </div>

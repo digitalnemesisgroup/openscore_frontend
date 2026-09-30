@@ -17,6 +17,7 @@ export default function OverviewTab({ currentApp, onVerifyFee, onRefresh }: Over
   const [feeInput, setFeeInput] = useState<string>(defaultFee.toString());
   const [isSavingFee, setIsSavingFee] = useState(false);
   const [feeSuccessMsg, setFeeSuccessMsg] = useState('');
+  const [showScreenshotModal, setShowScreenshotModal] = useState(false);
 
   // Loan Terms Config State
   const initialAmount = currentApp.approved_amount || currentApp.selected_amount || currentApp.requested_amount || 500000;
@@ -314,8 +315,100 @@ export default function OverviewTab({ currentApp, onVerifyFee, onRefresh }: Over
               <p className="font-mono font-bold text-slate-800">{currentApp.transaction_id || 'Not Submitted Yet'}</p>
             </div>
           </div>
+
+          {/* Uploaded Payment Screenshot / Receipt */}
+          {currentApp.payment_screenshot ? (
+            <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Applicant's Payment Screenshot / Receipt</span>
+                </span>
+                <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded">
+                  Uploaded by Applicant
+                </span>
+              </div>
+              <div className="flex items-start gap-3">
+                <div 
+                  onClick={() => setShowScreenshotModal(true)}
+                  className="w-24 h-24 bg-white border border-slate-300 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 relative group shrink-0 shadow-xs"
+                >
+                  {/* eslint-disable-next-html-link */}
+                  <img
+                    src={currentApp.payment_screenshot}
+                    alt="Payment Screenshot"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-[10px] font-bold">
+                    Click to Zoom
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-xs font-semibold text-slate-600">
+                    Verify this receipt matches Transaction UTR: <span className="font-mono font-bold text-slate-900">{currentApp.transaction_id}</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowScreenshotModal(true)}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>View Full Size Screenshot</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 font-medium">
+              No payment screenshot uploaded yet for this application.
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Admin Screenshot Zoom Modal */}
+      {showScreenshotModal && currentApp.payment_screenshot && (
+        <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-4 space-y-3 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h4 className="text-xs font-black text-slate-900">
+                Payment Screenshot — #{currentApp.application_number || currentApp.id} (UTR: {currentApp.transaction_id})
+              </h4>
+              <button
+                type="button"
+                onClick={() => setShowScreenshotModal(false)}
+                className="text-slate-400 hover:text-slate-700 text-xs font-bold px-2 py-1 bg-slate-100 rounded-lg cursor-pointer"
+              >
+                ✕ Close
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-auto rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center p-2">
+              {/* eslint-disable-next-html-link */}
+              <img
+                src={currentApp.payment_screenshot}
+                alt="Receipt Full"
+                className="max-w-full max-h-full object-contain rounded-lg"
+              />
+            </div>
+            <div className="flex justify-between items-center pt-1">
+              <span className="text-[11px] font-mono text-slate-500 font-bold">
+                Fee Amount: ₹{Number(defaultFee).toLocaleString('en-IN')}
+              </span>
+              {currentApp.fee_payment_status !== 'approved' && currentApp.payment_status !== 'approved' && (
+                <button
+                  onClick={() => {
+                    setShowScreenshotModal(false);
+                    onVerifyFee();
+                  }}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                >
+                  ✓ Approve Fee Payment
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

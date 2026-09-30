@@ -147,22 +147,40 @@ export default function VirtualLoanApplyPage() {
   const [additionalDocsRequest, setAdditionalDocsRequest] = useState<string | null>(null);
   const [adminRemark, setAdminRemark] = useState<string | null>(null);
 
-  // Get current applicable fee for selected amount
-  const currentFee = feeStructure.find((f) => f.amount === selectedAmount)?.fee || 3000;
+  const [feeConfig, setFeeConfig] = useState<any>(null);
 
   // Fetch Virtual Loan Settings on load
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const res = await apiRequest('/settings/virtual-loan');
-        if (res && res.data) {
-          if (res.data.fee_label) setFeeLabel(res.data.fee_label);
-          if (res.data.fee_structure) setFeeStructure(res.data.fee_structure);
+        const [vRes, feeRes] = await Promise.allSettled([
+          apiRequest('/settings/virtual-loan'),
+          apiRequest('/settings/fee-config'),
+        ]);
+
+        if (vRes.status === 'fulfilled' && vRes.value && vRes.value.data) {
+          if (vRes.value.data.fee_label) setFeeLabel(vRes.value.data.fee_label);
+          if (vRes.value.data.fee_structure) setFeeStructure(vRes.value.data.fee_structure);
+        }
+        if (feeRes.status === 'fulfilled' && feeRes.value && feeRes.value.data) {
+          setFeeConfig(feeRes.value.data);
         }
       } catch (err) {}
     }
     fetchSettings();
   }, []);
+
+  // Get current applicable fee for selected amount dynamically
+  const currentFee = React.useMemo(() => {
+    if (feeConfig && feeConfig.virtual_loan_fee_value !== undefined) {
+      if (feeConfig.virtual_loan_fee_type === 'percentage') {
+        return Math.max(1, Math.round(selectedAmount * (Number(feeConfig.virtual_loan_fee_value) / 100)));
+      }
+      return Number(feeConfig.virtual_loan_fee_value);
+    }
+    return feeStructure.find((f) => f.amount === selectedAmount)?.fee || 3000;
+  }, [selectedAmount, feeConfig, feeStructure]);
+
 
   // Submit Step 1: Select Amount & Basic Details
   const handleStep1Continue = async (e: React.FormEvent) => {
