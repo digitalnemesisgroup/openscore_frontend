@@ -90,7 +90,7 @@ export default function VirtualLoanApplyPage() {
     fileSize?: string;
   } | null>(null);
 
-  // Real File Upload Handler
+  // Real File Upload Handler with Canvas Compression
   const handleRealFileUpload = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -103,24 +103,72 @@ export default function VirtualLoanApplyPage() {
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        const previewUrl = event.target?.result as string;
-        setDocs((prev) => ({
-          ...prev,
-          [key]: {
-            uploaded: true,
-            name: file.name,
-            size: sizeStr,
-            preview: previewUrl,
-            status: 'Uploaded',
-          },
-        }));
-
-        // If this doc is currently open in preview modal, update preview in real-time
-        setPreviewDoc((current) =>
-          current && current.key === key
-            ? { ...current, previewUrl, fileName: file.name, fileSize: sizeStr }
-            : current
-        );
+        const rawUrl = event.target?.result as string;
+        try {
+          const img = new Image();
+          img.onload = () => {
+            const maxDim = 1000;
+            let width = img.width;
+            let height = img.height;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            let finalUrl = rawUrl;
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              finalUrl = canvas.toDataURL('image/jpeg', 0.65);
+            }
+            setDocs((prev) => ({
+              ...prev,
+              [key]: {
+                uploaded: true,
+                name: file.name,
+                size: sizeStr,
+                preview: finalUrl,
+                status: 'Uploaded',
+              },
+            }));
+            setPreviewDoc((current) =>
+              current && current.key === key
+                ? { ...current, previewUrl: finalUrl, fileName: file.name, fileSize: sizeStr }
+                : current
+            );
+          };
+          img.onerror = () => {
+            setDocs((prev) => ({
+              ...prev,
+              [key]: {
+                uploaded: true,
+                name: file.name,
+                size: sizeStr,
+                preview: rawUrl,
+                status: 'Uploaded',
+              },
+            }));
+          };
+          img.src = rawUrl;
+        } catch {
+          setDocs((prev) => ({
+            ...prev,
+            [key]: {
+              uploaded: true,
+              name: file.name,
+              size: sizeStr,
+              preview: rawUrl,
+              status: 'Uploaded',
+            },
+          }));
+        }
       };
       reader.readAsDataURL(file);
     } else {
