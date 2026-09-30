@@ -193,7 +193,10 @@ export default function UrgentConstructionLoanFormPage() {
 
       if (res && res.data) {
         const appId = res.data.id;
-        router.push(`/loan/apply/construction-loan/urgent/payment?id=${appId}`);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('active_urgent_loan_app_id', String(appId));
+        }
+        router.push(`/loan/apply/construction-loan/urgent/validate?id=${appId}`);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to submit Urgent Construction Loan application.');
