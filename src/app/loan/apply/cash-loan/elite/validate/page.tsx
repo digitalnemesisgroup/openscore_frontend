@@ -7,14 +7,10 @@ import LoanHeader from '@/components/LoanHeader';
 import { apiRequest } from '@/lib/api';
 import {
   CheckCircle2,
-  Sparkles,
   ArrowRight,
-  Scan,
-  ShieldCheck,
-  Lock,
+  Loader2,
   FileCheck,
-  User,
-  QrCode,
+  Lock,
 } from 'lucide-react';
 
 function EliteValidationContent() {
@@ -22,7 +18,7 @@ function EliteValidationContent() {
   const searchParams = useSearchParams();
   const appIdParam = searchParams.get('app_id');
 
-  // Exact 2-minute (120 seconds) document scanning sequence
+  // Exact 2-minute (120 seconds) validation countdown
   const SCAN_DURATION = 120;
   const [timeLeft, setTimeLeft] = useState<number>(SCAN_DURATION);
   const [appId, setAppId] = useState<string | null>(appIdParam);
@@ -38,7 +34,7 @@ function EliteValidationContent() {
     }
   }, [appIdParam]);
 
-  // Persistent Countdown Clock using target end timestamp for 12 seconds
+  // Persistent Countdown Clock using target end timestamp
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const currentId = appId || appIdParam || localStorage.getItem('active_elite_loan_app_id') || 'active';
@@ -94,124 +90,73 @@ function EliteValidationContent() {
     <MobileContainer>
       <LoanHeader title="Document Verification" backHref="/loan/apply/cash-loan/elite" />
 
-      <div className="p-4 space-y-4 flex-1 pb-32 animate-in fade-in duration-300 overflow-y-auto">
-        {/* TOP STATUS CARD */}
-        <div className="text-center space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[11px] font-black uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-            <span>{isComplete ? 'Scan Complete' : 'AI Live Document Scan'}</span>
-          </div>
+      <div className="p-4 space-y-6 flex-1 pb-32 animate-in fade-in duration-300 overflow-y-auto">
+        {/* TOP STATUS */}
+        <div className="text-center space-y-1.5 pt-2">
           <h1 className="text-xl font-black text-slate-900">
-            {isComplete ? 'Verification Successful! 🎉' : 'Scanning KYC Documents'}
+            {isComplete ? 'Validation Complete! 🎉' : 'Validating Documents'}
           </h1>
           <p className="text-xs text-slate-500 max-w-xs mx-auto">
             {isComplete
-              ? 'Your documents have been verified and pre-approved for express disbursal.'
-              : 'Our automated system is scanning your uploaded Aadhaar, PAN & selfie.'}
+              ? 'Your documents have been verified successfully. Please proceed to the next step.'
+              : 'Please wait while our system validates your submitted documents.'}
           </p>
         </div>
 
-        {/* 📄 DOCUMENT TOP-TO-BOTTOM SCANNING ANIMATION CONTAINER */}
-        <div className="relative mx-auto w-full max-w-xs bg-slate-900 rounded-3xl p-4 shadow-2xl border-2 border-purple-500/40 overflow-hidden">
-          {/* Subtle Background Glows */}
-          <div className="absolute -top-10 -left-10 w-24 h-24 bg-purple-600/30 rounded-full blur-2xl" />
-          <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-cyan-600/30 rounded-full blur-2xl" />
-
-          {/* SIMULATED DOCUMENT CARD */}
-          <div className="relative bg-gradient-to-br from-slate-800 via-slate-850 to-slate-900 border border-slate-700 rounded-2xl p-4 space-y-3 shadow-inner overflow-hidden">
-            {/* Top Bar of Document */}
-            <div className="flex items-center justify-between border-b border-slate-700/80 pb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-md bg-purple-600/30 border border-purple-400 flex items-center justify-center text-[10px] font-black text-purple-300">
-                  ID
-                </div>
-                <div>
-                  <span className="text-[10px] font-black text-slate-200 block leading-tight">NATIONAL IDENTITY</span>
-                  <span className="text-[8px] font-mono text-slate-400">UIDAI / NSDL VERIFIED</span>
-                </div>
+        {/* 🔄 ROTATING CIRCLE ANIMATION CONTAINER */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-xs text-center space-y-6 max-w-xs mx-auto">
+          <div className="relative w-36 h-36 mx-auto flex items-center justify-center">
+            {isComplete ? (
+              <div className="w-28 h-28 rounded-full bg-emerald-50 border-4 border-emerald-500 flex items-center justify-center text-emerald-600 animate-in zoom-in-75 duration-300 shadow-lg shadow-emerald-500/20">
+                <CheckCircle2 className="w-14 h-14" />
               </div>
-              <ShieldCheck className={`w-4 h-4 ${isComplete ? 'text-emerald-400' : 'text-purple-400'}`} />
-            </div>
-
-            {/* Document Body (Photo + Lines) */}
-            <div className="flex items-center gap-3">
-              {/* Photo Box */}
-              <div className="w-16 h-20 rounded-xl bg-slate-950/80 border border-slate-700 flex flex-col items-center justify-center text-slate-400 relative overflow-hidden shrink-0">
-                <User className="w-8 h-8 text-slate-500" />
-                <span className="text-[8px] font-mono text-slate-500 mt-1">PHOTO</span>
-                {isComplete && (
-                  <div className="absolute inset-0 bg-emerald-950/80 flex items-center justify-center text-emerald-400">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                )}
-              </div>
-
-              {/* Data Rows */}
-              <div className="flex-1 space-y-2">
-                <div className="space-y-1">
-                  <div className="h-2 w-24 bg-slate-700 rounded-full" />
-                  <div className="h-1.5 w-16 bg-slate-800 rounded-full" />
+            ) : (
+              <>
+                {/* Outer Smooth Rotating Gradient Ring */}
+                <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-purple-600 border-r-indigo-500 animate-spin" />
+                
+                {/* Inner Pulsing Circle */}
+                <div className="w-24 h-24 rounded-full bg-purple-50 flex flex-col items-center justify-center text-purple-700 space-y-1 shadow-inner">
+                  <span className="text-xs font-black font-mono">{formattedTime}</span>
+                  <span className="text-[10px] text-purple-600 font-bold">{progressPercent}%</span>
                 </div>
-                <div className="space-y-1">
-                  <div className="h-2 w-20 bg-slate-700 rounded-full" />
-                  <div className="h-1.5 w-28 bg-slate-800 rounded-full" />
-                </div>
-                <div className="pt-1 flex items-center justify-between">
-                  <div className="h-2 w-16 bg-purple-500/50 rounded-full" />
-                  <QrCode className="w-5 h-5 text-slate-600" />
-                </div>
-              </div>
-            </div>
-
-            {/* Document Bottom Mask */}
-            <div className="flex items-center justify-between text-[9px] font-mono text-slate-400 pt-1 border-t border-slate-700/80">
-              <span>CARD NO: •••• •••• 5849</span>
-              <span className="text-emerald-400 font-bold">{isComplete ? '100% MATCH' : 'SCANNING...'}</span>
-            </div>
-
-            {/* ⚡ LASER SCANNING BEAM (TOP TO BOTTOM CONTINUOUS SWEEP) */}
-            {!isComplete && (
-              <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#22d3ee,0_0_30px_#a855f7] z-20 animate-[scanLaser_2s_easeInOut_infinite] top-0" />
+              </>
             )}
           </div>
 
-          {/* PROGRESS BAR UNDER SCANNER */}
-          <div className="mt-4 space-y-1.5">
-            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+          <div className="space-y-2">
+            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-300 ${
-                  isComplete
-                    ? 'bg-gradient-to-r from-emerald-400 to-teal-400'
-                    : 'bg-gradient-to-r from-cyan-400 via-purple-500 to-indigo-400'
+                  isComplete ? 'bg-emerald-500' : 'bg-gradient-to-r from-purple-600 to-indigo-600'
                 }`}
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <div className="flex justify-between items-center text-[10px] font-mono font-bold text-slate-400">
-              <span>{isComplete ? 'Scan Completed' : `Scanning: ${progressPercent}%`}</span>
-              <span className="text-cyan-300">{isComplete ? '✓ Ready' : formattedTime}</span>
-            </div>
+            <p className="text-xs font-bold text-slate-600">
+              {isComplete ? 'All Documents Verified' : 'Processing verification...'}
+            </p>
           </div>
         </div>
 
         {/* BOTTOM ACTION & SUMMARY */}
         {isComplete ? (
           <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-300 pt-2">
-            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-xs">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-2xs">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 block">
-                  Sanctioned Amount
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Eligible Loan Amount
                 </span>
                 <span className="text-lg font-black text-slate-900">
                   ₹{formattedAmount(loanApp?.required_amount || loanApp?.selected_amount || 100000)}
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 block">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                   Status
                 </span>
-                <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200 inline-block">
-                  Pre-Approved ✓
+                <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full inline-block">
+                  Verified ✓
                 </span>
               </div>
             </div>
@@ -219,44 +164,23 @@ function EliteValidationContent() {
             <button
               type="button"
               onClick={handleProceedToPayment}
-              className="w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-sm rounded-2xl shadow-xl flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+              className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-sm rounded-2xl shadow-xl flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
             >
               <span>Proceed to Processing Fee Payment</span>
               <ArrowRight className="w-5 h-5" />
             </button>
-            <p className="text-[10px] text-center text-slate-500 font-semibold">
-              Pre-approved fast-track credit line reserved for your application.
-            </p>
           </div>
         ) : (
-          <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl text-center space-y-1">
-            <p className="text-xs font-bold text-purple-900 flex items-center justify-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-purple-600" /> Secure Document OCR Verification
+          <div className="p-3 bg-purple-50 border border-purple-100 rounded-2xl text-center">
+            <p className="text-xs font-bold text-purple-900">
+              Please do not refresh or close this screen
             </p>
-            <p className="text-[10px] text-purple-700 font-medium">
-              Please keep this screen open while our automated engine scans your uploaded documents.
+            <p className="text-[11px] text-purple-700 mt-0.5">
+              Verification completes in {formattedTime}
             </p>
           </div>
         )}
       </div>
-
-      {/* Embedded Keyframe CSS for Top-to-Bottom Laser Sweep Animation */}
-      <style jsx>{`
-        @keyframes scanLaser {
-          0% {
-            top: 0%;
-            opacity: 0.8;
-          }
-          50% {
-            top: 96%;
-            opacity: 1;
-          }
-          100% {
-            top: 0%;
-            opacity: 0.8;
-          }
-        }
-      `}</style>
     </MobileContainer>
   );
 }
@@ -265,10 +189,10 @@ export default function EliteLoanValidationPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+        <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
           <div className="text-center space-y-3">
             <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-sm font-bold text-purple-300">Initializing Scanner...</p>
+            <p className="text-sm font-bold text-purple-300">Loading...</p>
           </div>
         </div>
       }
