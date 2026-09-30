@@ -576,8 +576,8 @@ export default function EliteCashLoanApplyPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { key: 'pan_card', label: 'PAN Card Copy *', desc: 'Front photo of PAN Card' },
-              { key: 'aadhaar_card', label: 'Aadhaar Card (Front/Back) *', desc: 'Clear photo or PDF copy' },
-              { key: 'bank_statement', label: 'Bank Statement / Salary Slip', desc: 'Latest 3 months or passbook' },
+              { key: 'aadhaar_front', label: 'Aadhaar Card (Front) *', desc: 'Clear front photo with name & photo' },
+              { key: 'aadhaar_back', label: 'Aadhaar Card (Back) *', desc: 'Clear back photo with address' },
               { key: 'applicant_selfie', label: 'Applicant Live Photo / Selfie *', desc: 'Front facing portrait' },
             ].map((d) => (
               <div key={d.key} className="bg-slate-50 border border-slate-200 p-3 rounded-2xl space-y-2">

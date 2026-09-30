@@ -15,7 +15,7 @@ interface DocItemState {
   preview: string | null;
 }
 
-type DocKey = 'pan_card' | 'aadhaar_card' | 'photograph';
+type DocKey = 'pan_card' | 'aadhaar_front' | 'aadhaar_back' | 'photograph';
 
 function DocumentUploadContent() {
   const router = useRouter();
@@ -30,7 +30,8 @@ function DocumentUploadContent() {
 
   const [docs, setDocs] = useState<Record<DocKey, DocItemState>>({
     pan_card: { uploaded: false, name: '', size: '', preview: null },
-    aadhaar_card: { uploaded: false, name: '', size: '', preview: null },
+    aadhaar_front: { uploaded: false, name: '', size: '', preview: null },
+    aadhaar_back: { uploaded: false, name: '', size: '', preview: null },
     photograph: { uploaded: false, name: '', size: '', preview: null },
   });
 
@@ -129,8 +130,9 @@ function DocumentUploadContent() {
 
   const docList: { key: DocKey; label: string; desc: string; accept: string }[] = [
     { key: 'pan_card', label: 'PAN Card Upload', desc: 'Clear front photo of PAN card', accept: 'image/*,.pdf' },
-    { key: 'aadhaar_card', label: 'Aadhaar Card (Front & Back)', desc: 'Official identity & address proof', accept: 'image/*,.pdf' },
-    { key: 'photograph', label: 'Passport Size Photograph', desc: 'Clear selfie or passport photo', accept: 'image/*' },
+    { key: 'aadhaar_front', label: 'Aadhaar Card (Front)', desc: 'Clear front photo with name & photo', accept: 'image/*,.pdf' },
+    { key: 'aadhaar_back', label: 'Aadhaar Card (Back)', desc: 'Clear back photo with address & barcode', accept: 'image/*,.pdf' },
+    { key: 'photograph', label: 'Applicant Live Photo / Selfie', desc: 'Clear selfie or portrait photo', accept: 'image/*' },
   ];
 
   const totalUploaded = Object.values(docs).filter((d) => d.uploaded).length;
@@ -143,7 +145,7 @@ function DocumentUploadContent() {
         <div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold bg-purple-100 text-purple-800 px-2.5 py-0.5 rounded-full border border-purple-200">
-              Step 5 of 26
+              KYC Verification
             </span>
             <span className="text-[11px] font-bold text-slate-500">
               {totalUploaded} of {docList.length} Uploaded

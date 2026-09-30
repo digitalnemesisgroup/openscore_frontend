@@ -29,11 +29,6 @@ export default function LoanHeader({
         <div>
           <div className="flex items-center gap-1.5">
             <h2 className="text-sm font-black text-slate-900 leading-tight">{title}</h2>
-            {stepNumber && (
-              <span className="bg-purple-100 text-purple-800 text-[9px] font-extrabold px-2 py-0.2 rounded-full border border-purple-200">
-                Step {stepNumber}/{totalSteps}
-              </span>
-            )}
           </div>
           <span className="text-[10px] text-slate-400 font-semibold block leading-none mt-0.5">
             OpenScore Loan Portal
