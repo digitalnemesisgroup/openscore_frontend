@@ -147,6 +147,21 @@ export default function VirtualLoanDashboardPage() {
               </div>
             </div>
 
+            {/* PENDING ADMIN APPROVAL BANNER */}
+            {!isActive && (
+              <div className="bg-amber-50 border-2 border-amber-200 p-3.5 rounded-2xl flex items-start gap-2.5 shadow-2xs">
+                <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5 text-xs">
+                  <p className="font-black text-amber-900">
+                    Limit Credited • Pending Admin Approval
+                  </p>
+                  <p className="text-[11px] text-amber-700 leading-relaxed font-medium">
+                    Your approved credit limit of <strong>₹{approvedAmt.toLocaleString('en-IN')}</strong> is credited into your wallet. QR payments and transfers will be unlocked once admin completes verification.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* SUB-CARDS: TODAY'S REPAYMENT & NEXT DUE DATE */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white border border-slate-200 p-3.5 rounded-2xl space-y-1 shadow-2xs">
@@ -171,11 +186,21 @@ export default function VirtualLoanDashboardPage() {
             {/* ACTION BUTTONS: SCAN & PAY vs REPAY LOAN */}
             <div className="grid grid-cols-2 gap-3 pt-1">
               <button
-                onClick={() => setScanQrOpen(true)}
-                className="py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-xs shadow-md flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+                onClick={() => {
+                  if (!isActive) {
+                    alert(`Wallet Transfers Locked: Your approved virtual credit limit of ₹${approvedAmt.toLocaleString('en-IN')} is credited and booked in your wallet, but transfers and QR payments are locked until Admin Approval is completed.`);
+                    return;
+                  }
+                  setScanQrOpen(true);
+                }}
+                className={`py-3.5 px-4 rounded-2xl font-black text-xs shadow-md flex items-center justify-center gap-2 transition-all active:scale-[0.99] ${
+                  !isActive
+                    ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-pointer'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
               >
                 <QrCode className="w-4 h-4" />
-                <span>Scan & Pay</span>
+                <span>{isActive ? 'Scan & Pay' : '🔒 Scan & Pay (Locked)'}</span>
               </button>
 
               <button
