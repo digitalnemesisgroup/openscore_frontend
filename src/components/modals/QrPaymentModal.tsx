@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, QrCode, Send, CheckCircle2, ShieldCheck, Copy, ArrowRight, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
+import { getApiBaseUrl } from '@/lib/api';
 
 interface QrPaymentModalProps {
   isOpen: boolean;
@@ -47,7 +48,7 @@ export default function QrPaymentModal({ isOpen, onClose, onPaymentSuccess }: Qr
   const fetchQrCodeData = async () => {
     setIsLoadingQr(true);
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://server.msmeloan.sbs/api';
+      const API_BASE = getApiBaseUrl();
       const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
       const headers: Record<string, string> = {
         'Accept': 'application/json',
@@ -77,7 +78,7 @@ export default function QrPaymentModal({ isOpen, onClose, onPaymentSuccess }: Qr
     setIsResolving(true);
     setErrorMessage(null);
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://server.msmeloan.sbs/api';
+      const API_BASE = getApiBaseUrl();
       const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
 
       const res = await fetch(`${API_BASE}/user/wallet-card/qr-resolve`, {
@@ -128,7 +129,7 @@ export default function QrPaymentModal({ isOpen, onClose, onPaymentSuccess }: Qr
     setErrorMessage(null);
 
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://server.msmeloan.sbs/api';
+      const API_BASE = getApiBaseUrl();
       const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
 
       // Make secure payment request with idempotency key

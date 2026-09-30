@@ -29,6 +29,9 @@ import {
   Cpu,
   UserCheck,
   FileCheck,
+  QrCode,
+  Copy,
+  ExternalLink,
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 
@@ -53,6 +56,8 @@ export default function VirtualLoanApplyPage() {
   const [emailAddress, setEmailAddress] = useState<string>('');
   const [address, setAddress] = useState<string>('');
   const [termsAccepted, setTermsAccepted] = useState<boolean>(true);
+  const [copiedUpi, setCopiedUpi] = useState<boolean>(false);
+  const [utrInput, setUtrInput] = useState<string>('');
 
   // Dynamic Fee Config fetched from Admin Settings
   const [feeLabel, setFeeLabel] = useState<string>('Loan Processing / Service Fee');
@@ -944,47 +949,125 @@ export default function VirtualLoanApplyPage() {
               </p>
             </div>
 
-            {/* RED/CORAL NEXT STEP CARD */}
-            <div className="bg-gradient-to-br from-rose-50 via-red-50 to-orange-50 border-2 border-rose-300 p-4 rounded-3xl space-y-3 shadow-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="bg-rose-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase">
-                  Next Step
-                </span>
-              </div>
-              <p className="text-xs font-bold text-slate-800">
-                Pay the applicable processing fee to continue the activation process.
-              </p>
+            {/* RED/CORAL NEXT STEP CARD WITH DYNAMIC UPI QR & ID */}
+            {(() => {
+              const upiId = feeConfig?.upi_id || 'flipflops@upi';
+              const payeeName = feeConfig?.upi_payee_name || 'OpenScore Finance';
+              const upiPayUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${currentFee}&cu=INR`;
+              const qrCodeImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(upiPayUrl)}`;
 
-              {/* PAY FEE BUTTON */}
-              <button
-                onClick={handlePayFee}
-                disabled={payingFee}
-                className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-[0.99] transition-all disabled:opacity-50"
-              >
-                {payingFee ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Processing Payment...</span>
-                  </>
-                ) : (
-                  <span>Pay Fee ₹ {currentFee.toLocaleString('en-IN')}</span>
-                )}
-              </button>
+              const handleCopyUpi = () => {
+                if (typeof navigator !== 'undefined') {
+                  navigator.clipboard.writeText(upiId);
+                  setCopiedUpi(true);
+                  setTimeout(() => setCopiedUpi(false), 2000);
+                }
+              };
 
-              {/* SECONDARY BUTTON */}
-              <button
-                onClick={() => router.push('/loan/virtual-loan/dashboard')}
-                className="w-full py-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all"
-              >
-                View Loan Details
-              </button>
+              return (
+                <div className="bg-gradient-to-br from-rose-50 via-white to-red-50 border-2 border-rose-300 p-4 rounded-3xl space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+                      Next Step: Processing Fee
+                    </span>
+                    <span className="text-xs font-black text-rose-700 font-mono">
+                      ₹ {currentFee.toLocaleString('en-IN')}.00
+                    </span>
+                  </div>
 
-              <div className="text-center pt-1">
-                <span className="text-[11px] font-bold text-slate-500 flex items-center justify-center gap-1">
-                  <Lock className="w-3 h-3 text-emerald-600" /> 100% Secure Payment
-                </span>
-              </div>
-            </div>
+                  <p className="text-xs font-bold text-slate-800">
+                    Pay the applicable activation processing fee to official UPI ID to activate your limit.
+                  </p>
+
+                  {/* UPI ID COPY BOX */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-3 space-y-2 shadow-2xs">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                      <span>Official Receiving UPI ID:</span>
+                      <span className="text-emerald-700 font-semibold">{payeeName}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                      <span className="font-mono font-black text-xs text-slate-900 truncate mr-2">
+                        {upiId}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCopyUpi}
+                        className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg border border-blue-200 transition-all flex items-center gap-1 shrink-0"
+                      >
+                        {copiedUpi ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="text-emerald-700">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* QR CODE DISPLAY */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-4 text-center space-y-2 shadow-2xs flex flex-col items-center">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                      <QrCode className="w-3.5 h-3.5 text-indigo-600" /> Scan QR via GPay / PhonePe / Paytm
+                    </span>
+                    <div className="p-2 bg-white border border-slate-200 rounded-2xl shadow-inner inline-block">
+                      <img
+                        src={qrCodeImgUrl}
+                        alt="UPI Payment QR Code"
+                        className="w-40 h-40 object-contain mx-auto rounded-lg"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      Scan or tap below to launch your default UPI app
+                    </p>
+                  </div>
+
+                  {/* DIRECT UPI APP INTENT LINK */}
+                  <a
+                    href={upiPayUrl}
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-all text-center block"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Pay ₹{currentFee.toLocaleString('en-IN')} via UPI App</span>
+                  </a>
+
+                  {/* PAY & RECORD FEE BUTTON */}
+                  <button
+                    onClick={handlePayFee}
+                    disabled={payingFee}
+                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    {payingFee ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Verifying & Recording Payment...</span>
+                      </>
+                    ) : (
+                      <span>I Have Paid ₹ {currentFee.toLocaleString('en-IN')} (Submit)</span>
+                    )}
+                  </button>
+
+                  {/* SECONDARY BUTTON */}
+                  <button
+                    onClick={() => router.push('/loan/virtual-loan/dashboard')}
+                    className="w-full py-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all"
+                  >
+                    View Loan Details
+                  </button>
+
+                  <div className="text-center pt-1">
+                    <span className="text-[11px] font-bold text-slate-500 flex items-center justify-center gap-1">
+                      <Lock className="w-3 h-3 text-emerald-600" /> 100% Secure Payment • Instant Approval
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>

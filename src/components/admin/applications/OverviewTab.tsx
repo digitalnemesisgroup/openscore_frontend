@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User as UserIcon, FileText, CreditCard, CheckCircle2, Save, RefreshCw } from 'lucide-react';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, resolveMediaUrl } from '@/lib/api';
 import { formatLoanType } from '@/lib/loan-resume';
 
 interface OverviewTabProps {
@@ -15,9 +15,16 @@ export default function OverviewTab({ currentApp, onVerifyFee, onRefresh }: Over
   const isLowCibil = currentApp.loan_type === 'low_cibil' || currentApp.loan_type === 'Low CIBIL Loan';
   const defaultFee = currentApp.processing_fee || currentApp.fee_amount || (isLowCibil ? 999 : 499);
   const [feeInput, setFeeInput] = useState<string>(defaultFee.toString());
+  const [upiInput, setUpiInput] = useState<string>(currentApp.payment_upi_id || currentApp.upi_id || 'flipflops@upi');
   const [isSavingFee, setIsSavingFee] = useState(false);
   const [feeSuccessMsg, setFeeSuccessMsg] = useState('');
   const [showScreenshotModal, setShowScreenshotModal] = useState(false);
+
+  // Update when currentApp changes
+  useEffect(() => {
+    setFeeInput((currentApp.processing_fee || currentApp.fee_amount || (isLowCibil ? 999 : 499)).toString());
+    setUpiInput(currentApp.payment_upi_id || currentApp.upi_id || 'flipflops@upi');
+  }, [currentApp.id, currentApp.processing_fee, currentApp.fee_amount, currentApp.payment_upi_id, currentApp.upi_id]);
 
   // Loan Terms Config State
   const initialAmount = currentApp.approved_amount || currentApp.selected_amount || currentApp.requested_amount || 500000;
@@ -83,9 +90,14 @@ export default function OverviewTab({ currentApp, onVerifyFee, onRefresh }: Over
     try {
       await apiRequest(`/admin/applications/${currentApp.id}/configure-terms`, {
         method: 'POST',
-        body: JSON.stringify({ processing_fee: num, fee_amount: num }),
+        body: JSON.stringify({
+          processing_fee: num,
+          fee_amount: num,
+          payment_upi_id: upiInput.trim() || 'flipflops@upi',
+          upi_id: upiInput.trim() || 'flipflops@upi',
+        }),
       });
-      setFeeSuccessMsg('Processing fee updated successfully!');
+      setFeeSuccessMsg('Processing fee & receiving UPI ID updated successfully!');
       if (onRefresh) onRefresh();
       setTimeout(() => setFeeSuccessMsg(''), 3000);
     } catch (err: any) {
@@ -260,37 +272,62 @@ export default function OverviewTab({ currentApp, onVerifyFee, onRefresh }: Over
             )}
           </div>
 
-          {/* Admin Custom Fee Configuration */}
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <span className="text-[11px] font-bold text-slate-700">Set Custom Processing Fee (₹):</span>
-              <p className="text-[10px] text-slate-500">Applicant will be charged this exact amount at payment screen (UPI: flipflops@upi)</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <span className="absolute left-2.5 top-2 text-xs font-bold text-slate-500">₹</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={feeInput}
-                  onChange={(e) => setFeeInput(e.target.value)}
-                  className="w-28 pl-6 pr-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-emerald-500"
-                />
+          {/* Admin Custom Fee & Receiving UPI Configuration */}
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <span className="text-xs font-black text-slate-900">Custom Processing Fee & Receiving UPI VPA</span>
+                <p className="text-[11px] text-slate-500">Applicant will be charged this exact amount and routed to this UPI ID at payment screen</p>
               </div>
               <button
                 type="button"
                 onClick={handleSaveFee}
                 disabled={isSavingFee}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1 shadow-2xs cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50 shrink-0 self-start sm:self-center"
               >
                 {isSavingFee ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                <span>Save</span>
+                <span>Save Fee & UPI</span>
               </button>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200/80">
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                  Processing Fee (₹)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-xs font-bold text-slate-500">₹</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={feeInput}
+                    onChange={(e) => setFeeInput(e.target.value)}
+                    className="w-full pl-7 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-emerald-500 font-mono"
+                    placeholder="e.g. 999"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                  Receiving UPI ID (Default: flipflops@upi)
+                </label>
+                <input
+                  type="text"
+                  value={upiInput}
+                  onChange={(e) => setUpiInput(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-emerald-500 font-mono"
+                  placeholder="flipflops@upi"
+                />
+              </div>
+            </div>
+
+            {feeSuccessMsg && (
+              <p className="text-xs text-emerald-600 font-bold bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
+                ✓ {feeSuccessMsg}
+              </p>
+            )}
           </div>
-          {feeSuccessMsg && (
-            <p className="text-xs text-emerald-600 font-bold">{feeSuccessMsg}</p>
-          )}
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
             <div>
@@ -335,7 +372,7 @@ export default function OverviewTab({ currentApp, onVerifyFee, onRefresh }: Over
                 >
                   {/* eslint-disable-next-html-link */}
                   <img
-                    src={currentApp.payment_screenshot}
+                    src={resolveMediaUrl(currentApp.payment_screenshot)}
                     alt="Payment Screenshot"
                     className="w-full h-full object-cover"
                   />
@@ -347,14 +384,24 @@ export default function OverviewTab({ currentApp, onVerifyFee, onRefresh }: Over
                   <p className="text-xs font-semibold text-slate-600">
                     Verify this receipt matches Transaction UTR: <span className="font-mono font-bold text-slate-900">{currentApp.transaction_id}</span>
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setShowScreenshotModal(true)}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>View Full Size Screenshot</span>
-                    <span>→</span>
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowScreenshotModal(true)}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>View Full Size Screenshot</span>
+                      <span>→</span>
+                    </button>
+                    <a
+                      href={resolveMediaUrl(currentApp.payment_screenshot)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-slate-600 hover:text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      <span>Open in New Tab ↗</span>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -385,7 +432,7 @@ export default function OverviewTab({ currentApp, onVerifyFee, onRefresh }: Over
             <div className="max-h-[70vh] overflow-auto rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center p-2">
               {/* eslint-disable-next-html-link */}
               <img
-                src={currentApp.payment_screenshot}
+                src={resolveMediaUrl(currentApp.payment_screenshot)}
                 alt="Receipt Full"
                 className="max-w-full max-h-full object-contain rounded-lg"
               />

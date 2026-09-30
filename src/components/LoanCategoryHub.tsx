@@ -74,7 +74,7 @@ export default function LoanCategoryHub({
   // 'CASH_LOAN_OPTIONS' -> Low CIBIL vs High CIBIL Options
   // 'VIRTUAL_LOAN_OPTIONS' -> OpenScore App Wallet Virtual Credit
   const [viewMode, setViewMode] = useState<
-    'HUB' | 'PERSONAL_SUBTYPES' | 'CASH_LOAN_OPTIONS' | 'VIRTUAL_LOAN_OPTIONS'
+    'HUB' | 'PERSONAL_SUBTYPES' | 'CONSTRUCTION_SUBTYPES' | 'CASH_LOAN_OPTIONS' | 'VIRTUAL_LOAN_OPTIONS'
   >('HUB');
 
   const [consentVirtual, setConsentVirtual] = useState<boolean>(false);
@@ -183,6 +183,25 @@ export default function LoanCategoryHub({
             </div>
           </div>
 
+          {/* Quick Track Application Status Bar */}
+          <div
+            onClick={() => router.push('/loan/track')}
+            className="bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-200 rounded-2xl p-3 flex items-center justify-between cursor-pointer transition-all shadow-2xs"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 bg-indigo-600 text-white rounded-xl">
+                <Zap className="w-4 h-4 fill-white" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-indigo-950">Track Loan Status</h4>
+                <p className="text-[10px] text-indigo-700 font-medium">Check real-time application updates using your Loan ID</p>
+              </div>
+            </div>
+            <span className="text-xs font-black text-indigo-600 flex items-center gap-0.5">
+              Track <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+
           <div className="grid grid-cols-1 gap-2.5">
             {categories.map((cat) => {
               const IconComp = cat.icon;
@@ -191,7 +210,7 @@ export default function LoanCategoryHub({
                   key={cat.id}
                   onClick={() => {
                     if (cat.id === 'construction_loan') {
-                      onContinueLoan('construction_loan');
+                      setViewMode('CONSTRUCTION_SUBTYPES');
                     } else if (cat.id === 'personal_loan') {
                       setViewMode('PERSONAL_SUBTYPES');
                     } else if (cat.isAvailable) {
@@ -204,7 +223,7 @@ export default function LoanCategoryHub({
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`w-11 h-11 rounded-2xl ${cat.isAvailable ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-200' : 'bg-white text-slate-700 shadow-2xs'} flex items-center justify-center font-bold shrink-0`}>
+                      <div className={`w-11 h-11 rounded-2xl ${cat.isAvailable ? (cat.id === 'construction_loan' ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-200' : 'bg-purple-600 text-white shadow-md ring-2 ring-purple-200') : 'bg-white text-slate-700 shadow-2xs'} flex items-center justify-center font-bold shrink-0`}>
                         <IconComp className={`w-5 h-5 ${cat.isAvailable ? 'text-white' : cat.color}`} />
                       </div>
                       <div>
@@ -222,7 +241,7 @@ export default function LoanCategoryHub({
                           )}
                         </div>
                         <p className="text-xs text-slate-500 font-medium leading-tight mt-0.5">{cat.subtitle}</p>
-                        <p className={`text-xs font-black mt-1 ${cat.isAvailable ? 'text-purple-700' : 'text-slate-700'}`}>
+                        <p className={`text-xs font-black mt-1 ${cat.id === 'construction_loan' ? 'text-emerald-700' : cat.isAvailable ? 'text-purple-700' : 'text-slate-700'}`}>
                           {cat.maxAmount}
                         </p>
                       </div>
@@ -235,6 +254,141 @@ export default function LoanCategoryHub({
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* VIEW: CONSTRUCTION LOAN SUB-TYPES (URGENT vs STANDARD) */}
+      {/* ==================================================================== */}
+      {viewMode === 'CONSTRUCTION_SUBTYPES' && (
+        <div className="space-y-3 animate-in fade-in slide-in-from-right-3 duration-300">
+          <div className="flex items-center justify-between pb-1 border-b border-slate-200">
+            <button
+              onClick={() => setViewMode('HUB')}
+              className="text-xs font-extrabold text-emerald-700 hover:text-emerald-900 flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Loan Categories</span>
+            </button>
+            <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-300">
+              CONSTRUCTION LOAN
+            </span>
+          </div>
+
+          <div>
+            <h1 className="text-xl font-black text-slate-900 flex items-center gap-2">
+              <Hammer className="w-6 h-6 text-emerald-600" />
+              Construction Loan Options
+            </h1>
+            <p className="text-xs text-slate-500 font-medium">Select your construction application speed & process</p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 pt-1">
+            {/* TYPE 1: ELITE CONSTRUCTION LOAN (⚡ EXPRESS FAST-TRACK) */}
+            <div
+              onClick={() => router.push('/loan/apply/construction-loan/urgent')}
+              className="bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 text-white rounded-3xl p-4.5 space-y-3 cursor-pointer shadow-lg hover:shadow-xl transition-all active:scale-[0.99] group border-2 border-amber-300 relative overflow-hidden"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-950/80 text-amber-300 flex items-center justify-center font-bold shadow-md border border-amber-400/40 shrink-0">
+                    <Zap className="w-6 h-6 fill-amber-400 text-amber-400" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-base font-black text-white">Elite Construction Loan</h3>
+                      <span className="bg-slate-950/90 text-amber-300 text-[9px] font-black px-2 py-0.5 rounded-full border border-amber-400/40">
+                        ⚡ EXPRESS 24H
+                      </span>
+                    </div>
+                    <p className="text-xs text-amber-100 font-medium leading-tight mt-0.5">
+                      Direct single-form submission with express admin verification.
+                    </p>
+                    <p className="text-xs font-black text-white mt-1">
+                      Up to ₹1,00,00,000 (1 Crore) • Property &amp; Document Fast-Track
+                    </p>
+                  </div>
+                </div>
+
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white shadow-2xs border border-white/30 group-hover:bg-white group-hover:text-amber-600 transition-colors shrink-0">
+                  <ChevronRight className="w-4 h-4" />
+                </div>
+              </div>
+
+              <div className="bg-black/20 backdrop-blur-xs p-3 rounded-2xl border border-white/20 text-xs text-amber-50 space-y-1.5 font-medium">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-300 shrink-0" />
+                  <span>Single-step comprehensive property &amp; applicant form</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-300 shrink-0" />
+                  <span>Direct QR Fee payment &amp; UTR screenshot submission</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-300 shrink-0" />
+                  <span>Live 8-stage verification tracking on your portal</span>
+                </div>
+              </div>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push('/loan/apply/construction-loan/urgent');
+                }}
+                className="w-full py-3 bg-white text-slate-950 font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 hover:bg-amber-50 active:scale-[0.99] transition-all"
+              >
+                <span>Apply for Elite Construction Loan →</span>
+                <ArrowRight className="w-4 h-4 text-amber-600" />
+              </button>
+            </div>
+
+            {/* TYPE 2: STANDARD CONSTRUCTION LOAN (CIBIL TIER-BASED) */}
+            <div
+              onClick={() => router.push('/loan/apply/construction-loan')}
+              className="bg-gradient-to-br from-emerald-50 via-emerald-50/50 to-white border-2 border-emerald-200 hover:border-emerald-500 rounded-3xl p-4 space-y-3 cursor-pointer shadow-sm hover:shadow-md transition-all active:scale-[0.99] group"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-md shrink-0">
+                    <Hammer className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-base font-black text-slate-900">Standard Construction Loan</h3>
+                      <span className="bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                        CIBIL TIERS
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium leading-tight mt-0.5">
+                      Multi-tier construction capital based on your credit score profile.
+                    </p>
+                    <p className="text-xs font-black text-emerald-700 mt-1">
+                      Up to ₹1,00,00,000 • Without CIBIL, Low & High CIBIL
+                    </p>
+                  </div>
+                </div>
+
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-emerald-600 shadow-2xs border border-emerald-200 group-hover:bg-emerald-600 group-hover:text-white transition-colors shrink-0">
+                  <ChevronRight className="w-4 h-4" />
+                </div>
+              </div>
+
+              <div className="bg-white p-3 rounded-2xl border border-emerald-100 text-xs text-slate-700 space-y-1.5 font-medium">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Without CIBIL (Up to ₹10,00,000)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Low CIBIL (Up to ₹40,00,000)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>High CIBIL (Up to ₹1,00,00,000)</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -266,7 +420,68 @@ export default function LoanCategoryHub({
           </div>
 
           <div className="grid grid-cols-1 gap-3 pt-1">
-            {/* TYPE 1: CASH LOAN */}
+            {/* TYPE 0: ELITE PERSONAL CASH LOAN (⚡ EXPRESS 2-MIN SANCTION) */}
+            <div
+              onClick={() => router.push('/loan/apply/cash-loan/elite')}
+              className="bg-gradient-to-br from-purple-800 via-indigo-800 to-purple-900 text-white rounded-3xl p-4.5 space-y-3 cursor-pointer shadow-lg hover:shadow-xl transition-all active:scale-[0.99] group border-2 border-purple-300 relative overflow-hidden"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-950/80 text-purple-300 flex items-center justify-center font-bold shadow-md border border-purple-400/40 shrink-0">
+                    <Zap className="w-6 h-6 fill-purple-400 text-purple-400" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h3 className="text-base font-black text-white">Elite Personal Cash Loan</h3>
+                      <span className="bg-slate-950/90 text-purple-300 text-[9px] font-black px-2 py-0.5 rounded-full border border-purple-400/40">
+                        ⚡ 2-MIN SANCTION
+                      </span>
+                      <span className="bg-purple-500/30 text-purple-200 text-[9px] font-extrabold px-2 py-0.5 rounded-md border border-purple-300/30">
+                        UP TO 3 DAYS
+                      </span>
+                    </div>
+                    <p className="text-xs text-purple-100 font-medium leading-tight mt-0.5">
+                      Instant 2-minute live validation, simple KYC &amp; bank disbursal in up to 3 days.
+                    </p>
+                    <p className="text-xs font-black text-white mt-1">
+                      Up to ₹15,00,000 • Disbursal in Up to 3 Days
+                    </p>
+                  </div>
+                </div>
+
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white shadow-2xs border border-white/30 group-hover:bg-white group-hover:text-purple-800 transition-colors shrink-0">
+                  <ChevronRight className="w-4 h-4" />
+                </div>
+              </div>
+
+              <div className="bg-black/20 backdrop-blur-xs p-3 rounded-2xl border border-white/20 text-xs text-purple-50 space-y-1.5 font-medium">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-purple-300 shrink-0" />
+                  <span>2-minute automated live credit &amp; KYC verification</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-purple-300 shrink-0" />
+                  <span>Nominal processing fee payment &amp; instant token</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-purple-300 shrink-0" />
+                  <span>Direct disbursal into applicant bank account (takes up to 3 days)</span>
+                </div>
+              </div>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push('/loan/apply/cash-loan/elite');
+                }}
+                className="w-full py-3 bg-white text-slate-950 font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 hover:bg-purple-50 active:scale-[0.99] transition-all"
+              >
+                <span>Apply for Elite Cash Loan →</span>
+                <ArrowRight className="w-4 h-4 text-purple-600" />
+              </button>
+            </div>
+
+            {/* TYPE 1: CASH LOAN (CIBIL TIERS) */}
             <div
               onClick={() => {
                 setViewMode('CASH_LOAN_OPTIONS');
@@ -281,7 +496,7 @@ export default function LoanCategoryHub({
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <h3 className="text-base font-black text-slate-900">Cash Loan</h3>
+                      <h3 className="text-base font-black text-slate-900">Standard Cash Loan (CIBIL Tiers)</h3>
                       <span className="bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
                         BANK DISBURSAL
                       </span>
@@ -290,7 +505,7 @@ export default function LoanCategoryHub({
                       Direct cash transfer into your bank account.
                     </p>
                     <p className="text-xs font-black text-purple-700 mt-1">
-                      Up to ₹50,00,000 • Low & High CIBIL Options
+                      Up to ₹50,00,000 • Low &amp; High CIBIL Options
                     </p>
                   </div>
                 </div>

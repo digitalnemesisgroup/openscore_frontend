@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import MobileContainer from '@/components/MobileContainer';
 import LoanHeader from '@/components/LoanHeader';
 import CibilGaugeIcon from '@/components/CibilGaugeIcon';
-import { CheckCircle2, ArrowRight, Banknote, AlertTriangle, RefreshCw, Play, Info } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Banknote, AlertTriangle, RefreshCw, Play, Info, Zap } from 'lucide-react';
 import { getActiveLoanApplication, getResumeStepDetails, cancelLoanApplication, checkReapplicationCooldown, LoanAppRecord, ResumeStepInfo, CooldownInfo } from '@/lib/loan-resume';
 import CooldownLockCard from '@/components/CooldownLockCard';
 
@@ -91,68 +91,73 @@ export default function CashLoanSelectorPage() {
           <p className="text-xs text-slate-500 font-medium">Choose according to your credit profile score</p>
         </div>
 
-        {/* LOADING SKELETON */}
-        {checkingApp ? (
-          <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 animate-pulse flex items-center gap-3">
-            <RefreshCw className="w-5 h-5 text-purple-600 animate-spin" />
-            <span className="text-xs font-bold text-slate-600">Checking for existing active loan application...</span>
-          </div>
-        ) : cooldownInfo.isLocked ? (
-          <CooldownLockCard cooldownInfo={cooldownInfo} />
-        ) : activeApp && resumeInfo && !showNewAppOptions ? (
-          /* ACTIVE LOAN APPLICATION RESUME PROMPT CARD (SHOWN EXCLUSIVELY) */
-          <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 text-white rounded-3xl p-5 shadow-xl border-2 border-purple-500/40 space-y-3 relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black bg-emerald-500 text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                <Play className="w-3 h-3 fill-white" /> ACTIVE LOAN IN PROGRESS
-              </span>
-              <span className="text-[10px] font-mono font-bold text-purple-200 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
-                #{activeApp.application_number || `OSL-${activeApp.id}`}
-              </span>
-            </div>
-
+        {/* Track Existing Loan Bar */}
+        <div
+          onClick={() => router.push('/loan/track')}
+          className="bg-indigo-50/80 hover:bg-indigo-100/80 border border-indigo-200 rounded-2xl p-3 flex items-center justify-between cursor-pointer transition-all shadow-2xs"
+        >
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 bg-indigo-600 text-white rounded-xl">
+              <Zap className="w-3.5 h-3.5" />
+            </span>
             <div>
-              <h3 className="text-base font-black text-white">{resumeInfo.stepTitle}</h3>
-              <p className="text-xs text-purple-200 font-semibold mt-0.5 flex items-center gap-2">
-                <span>Step {resumeInfo.stepNumber} of 26</span>
-                <span>•</span>
-                <span className="text-emerald-400 font-bold">{resumeInfo.progressPercent}% Completed</span>
-              </p>
+              <p className="text-xs font-black text-indigo-950">Already applied for a loan?</p>
+              <p className="text-[10px] text-indigo-700 font-medium">Check real-time approval status using your Loan ID</p>
             </div>
-
-            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-white/10">
-              <div
-                className="bg-gradient-to-r from-purple-500 via-indigo-400 to-emerald-400 h-full rounded-full transition-all duration-500"
-                style={{ width: `${resumeInfo.progressPercent}%` }}
-              />
-            </div>
-
-            <button
-              onClick={handleResumeActiveApp}
-              className="w-full py-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
-            >
-              <span>Resume Saved Application (Step {resumeInfo.stepNumber}) →</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={handleStartNewApplication}
-              disabled={cancellingApp}
-              className="w-full text-center text-[11px] font-bold text-rose-300 hover:text-white underline pt-1 flex items-center justify-center gap-1"
-            >
-              {cancellingApp ? (
-                <>
-                  <RefreshCw className="w-3 h-3 animate-spin" />
-                  <span>Cancelling previous loan in database...</span>
-                </>
-              ) : (
-                <span>Or Start a New Application instead (Cancels current active loan)</span>
-              )}
-            </button>
           </div>
+          <span className="text-xs font-black text-indigo-600 flex items-center gap-0.5">
+            Track <ArrowRight className="w-3.5 h-3.5" />
+          </span>
+        </div>
+
+        {cooldownInfo.isLocked ? (
+          <CooldownLockCard cooldownInfo={cooldownInfo} />
         ) : (
           /* NEW APPLICATION OPTIONS */
           <>
+            {/* ⚡ ELITE FAST-TRACK CASH LOAN OPTION */}
+            <div
+              onClick={() => router.push('/loan/apply/cash-loan/elite')}
+              className="bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-900 text-white rounded-3xl p-4.5 shadow-xl hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden group border-2 border-purple-300 space-y-3 active:scale-[0.99]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="bg-slate-950/90 text-purple-300 font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 border border-purple-400/40">
+                      <Zap className="w-3.5 h-3.5 text-purple-400 fill-purple-400" /> ELITE EXPRESS LOAN
+                    </span>
+                    <span className="bg-white/20 text-white font-extrabold text-[9px] px-2 py-0.5 rounded-md">
+                      2-MIN SANCTION
+                    </span>
+                    <span className="bg-purple-900/60 text-purple-200 text-[9px] font-bold px-2 py-0.5 rounded-md border border-purple-400/30">
+                      UP TO 3 DAYS
+                    </span>
+                  </div>
+                  <h3 className="text-base font-black text-white pt-0.5">Elite Personal Cash Loan</h3>
+                  <p className="text-xs text-purple-100 font-medium leading-tight">
+                    Instant 2-minute live validation, simple KYC document verification &amp; bank disbursal in up to 3 days.
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] font-bold text-purple-200 uppercase block">Max Amount</span>
+                  <span className="text-sm font-black text-slate-900 bg-white px-2.5 py-1 rounded-xl shadow-xs inline-block">
+                    Up to ₹15L
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 border-t border-white/20 text-xs font-bold text-purple-200">
+                <span className="flex items-center gap-1 text-[11px]">
+                  <span>Nominal documentation</span>
+                  <span>•</span>
+                  <span>Disbursal in Up to 3 Days</span>
+                </span>
+                <span className="text-white flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                  Apply Elite <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
+            </div>
+
             {cancelledNotice && (
               <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-xl font-bold flex items-start gap-2 animate-in fade-in">
                 <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />

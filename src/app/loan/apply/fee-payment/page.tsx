@@ -23,7 +23,7 @@ function FeePaymentContent() {
   const [error, setError] = useState('');
   const [paymentSubmitted, setPaymentSubmitted] = useState(false);
   const [isVerifiedByAdmin, setIsVerifiedByAdmin] = useState(false);
-  const [loanType, setLoanType] = useState<'low_cibil' | 'good_cibil'>('low_cibil');
+  const [loanType, setLoanType] = useState<'without_cibil' | 'low_cibil' | 'good_cibil'>('low_cibil');
   const [submittedTxId, setSubmittedTxId] = useState('');
   const [submittedScreenshot, setSubmittedScreenshot] = useState('');
   const [copied, setCopied] = useState(false);
@@ -59,8 +59,14 @@ function FeePaymentContent() {
       if (res.data) {
         const app = res.data;
         setAppData(app);
-        if (app.loan_type && app.loan_type.includes('good')) {
+        const lType = (app.loan_type || '').toLowerCase();
+        const cType = (app.cibil_type || '').toLowerCase();
+        if (lType.includes('good') || lType.includes('high') || cType.includes('good') || cType.includes('high')) {
           setLoanType('good_cibil');
+        } else if (lType.includes('without') || lType.includes('no_cibil') || cType.includes('without') || cType.includes('no_cibil')) {
+          setLoanType('without_cibil');
+        } else {
+          setLoanType('low_cibil');
         }
         if (app.transaction_id) {
           setSubmittedTxId(app.transaction_id);
@@ -151,9 +157,12 @@ function FeePaymentContent() {
   const [feeConfig, setFeeConfig] = useState<any>({
     upi_id: 'flipflops@upi',
     upi_payee_name: 'OpenScore Finance',
-    cash_loan_fee_type: 'fixed',
-    cash_loan_fee_value: 999,
-    cash_loan_good_cibil_fee_value: 499,
+    cash_loan_without_cibil_fee_type: 'fixed',
+    cash_loan_without_cibil_fee_value: 999,
+    cash_loan_low_cibil_fee_type: 'fixed',
+    cash_loan_low_cibil_fee_value: 999,
+    cash_loan_high_cibil_fee_type: 'fixed',
+    cash_loan_high_cibil_fee_value: 499,
   });
 
   useEffect(() => {
@@ -177,16 +186,26 @@ function FeePaymentContent() {
     router.push(targetId ? `/loan/apply/select-partner?id=${targetId}` : '/loan/apply/select-partner');
   };
 
-  // Priority: 1. Application-specific fee set by admin -> 2. Global fee config (fixed vs %)
+  // Priority: 1. Application-specific fee set by admin -> 2. Global fee config (3 tiers & fixed vs %)
   let calculatedFee = 999;
   if (appData?.processing_fee || appData?.fee_amount) {
     calculatedFee = Number(appData.processing_fee || appData.fee_amount);
   } else if (feeConfig) {
-    const isGood = loanType === 'good_cibil';
-    const rateOrVal = isGood
-      ? Number(feeConfig.cash_loan_good_cibil_fee_value ?? 499)
-      : Number(feeConfig.cash_loan_fee_value ?? 999);
-    if (feeConfig.cash_loan_fee_type === 'percentage') {
+    let feeType = 'fixed';
+    let rateOrVal = 999;
+
+    if (loanType === 'good_cibil') {
+      feeType = feeConfig.cash_loan_high_cibil_fee_type || feeConfig.cash_loan_fee_type || 'fixed';
+      rateOrVal = Number(feeConfig.cash_loan_high_cibil_fee_value ?? feeConfig.cash_loan_good_cibil_fee_value ?? 499);
+    } else if (loanType === 'without_cibil') {
+      feeType = feeConfig.cash_loan_without_cibil_fee_type || feeConfig.cash_loan_fee_type || 'fixed';
+      rateOrVal = Number(feeConfig.cash_loan_without_cibil_fee_value ?? feeConfig.cash_loan_fee_value ?? 999);
+    } else {
+      feeType = feeConfig.cash_loan_low_cibil_fee_type || feeConfig.cash_loan_fee_type || 'fixed';
+      rateOrVal = Number(feeConfig.cash_loan_low_cibil_fee_value ?? 999);
+    }
+
+    if (feeType === 'percentage') {
       const principal = Number(appData?.required_amount || appData?.applied_amount || 50000);
       calculatedFee = Math.max(1, Math.round(principal * (rateOrVal / 100)));
     } else {
@@ -194,8 +213,8 @@ function FeePaymentContent() {
     }
   }
 
-  const upiId = feeConfig?.upi_id || 'flipflops@upi';
-  const payeeName = feeConfig?.upi_payee_name || 'OpenScore Finance';
+  const upiId = appData?.payment_upi_id || appData?.upi_id || feeConfig?.upi_id || 'flipflops@upi';
+  const payeeName = appData?.upi_payee_name || feeConfig?.upi_payee_name || 'OpenScore Finance';
   const feeAmountNumber = calculatedFee;
   const feeAmount = `₹${feeAmountNumber.toLocaleString('en-IN')}.00`;
   const upiPayUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${feeAmountNumber}&cu=INR`;

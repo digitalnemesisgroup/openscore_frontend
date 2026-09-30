@@ -1,9 +1,57 @@
-export const getApiBaseUrl = () => {
-  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+export const getBackendHost = (): string => {
   if (typeof window !== 'undefined') {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://127.0.0.1:8000';
+    }
+    return 'https://server.msmeloan.sbs';
+  }
+  return 'https://server.msmeloan.sbs';
+};
+
+export const resolveMediaUrl = (val?: any): string => {
+  if (!val) return '';
+  if (typeof val === 'object') {
+    if (val.base64 && typeof val.base64 === 'string') return val.base64;
+    if (val.preview && typeof val.preview === 'string') return resolveMediaUrl(val.preview);
+    if (val.url && typeof val.url === 'string') return resolveMediaUrl(val.url);
+    if (val.path && typeof val.path === 'string') return resolveMediaUrl(val.path);
+    if (val.file && typeof val.file === 'string') return resolveMediaUrl(val.file);
+    return '';
+  }
+  if (typeof val !== 'string') return '';
+  const trimmed = val.trim();
+  if (!trimmed) return '';
+
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+
+  const host = getBackendHost();
+  const cleanPath = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
+
+  if (cleanPath.startsWith('storage/') || cleanPath.startsWith('uploads/')) {
+    return `${host}/${cleanPath}`;
+  }
+
+  if (!cleanPath.includes('/')) {
+    return `${host}/storage/documents/${cleanPath}`;
+  }
+
+  return `${host}/${cleanPath}`;
+};
+
+export const getApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return 'http://127.0.0.1:8000/api';
     }
+    return 'https://server.msmeloan.sbs/api';
   }
   return 'https://server.msmeloan.sbs/api';
 };

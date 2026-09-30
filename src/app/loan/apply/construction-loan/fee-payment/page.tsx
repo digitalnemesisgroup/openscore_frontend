@@ -157,8 +157,12 @@ function ConstructionFeePaymentForm() {
   const [feeConfig, setFeeConfig] = useState<any>({
     upi_id: 'flipflops@upi',
     upi_payee_name: 'OpenScore Finance',
-    construction_loan_fee_type: 'fixed',
-    construction_loan_fee_value: 999,
+    construction_loan_without_cibil_fee_type: 'fixed',
+    construction_loan_without_cibil_fee_value: 999,
+    construction_loan_low_cibil_fee_type: 'fixed',
+    construction_loan_low_cibil_fee_value: 999,
+    construction_loan_high_cibil_fee_type: 'fixed',
+    construction_loan_high_cibil_fee_value: 499,
   });
 
   useEffect(() => {
@@ -182,13 +186,32 @@ function ConstructionFeePaymentForm() {
     router.push(`/loan/apply/construction-loan/select-partner${targetId ? `?id=${targetId}` : ''}`);
   };
 
-  // Priority: 1. Application-specific fee set by admin -> 2. Global fee config (fixed vs %)
+  // Priority: 1. Application-specific fee set by admin -> 2. Global fee config (3 tiers & fixed vs %)
   let calculatedFee = 999;
   if (appData?.processing_fee || appData?.fee_amount) {
     calculatedFee = Number(appData.processing_fee || appData.fee_amount);
   } else if (feeConfig) {
-    const rateOrVal = Number(feeConfig.construction_loan_fee_value ?? 999);
-    if (feeConfig.construction_loan_fee_type === 'percentage') {
+    const lType = (appData?.loan_type || '').toLowerCase();
+    const cType = (appData?.cibil_type || '').toLowerCase();
+    const isHigh = lType.includes('good') || lType.includes('high') || cType.includes('good') || cType.includes('high');
+    const isLow = lType.includes('low') || cType.includes('low');
+
+    let feeType = 'fixed';
+    let rateOrVal = 999;
+
+    if (isHigh) {
+      feeType = feeConfig.construction_loan_high_cibil_fee_type || feeConfig.construction_loan_fee_type || 'fixed';
+      rateOrVal = Number(feeConfig.construction_loan_high_cibil_fee_value ?? 499);
+    } else if (isLow) {
+      feeType = feeConfig.construction_loan_low_cibil_fee_type || feeConfig.construction_loan_fee_type || 'fixed';
+      rateOrVal = Number(feeConfig.construction_loan_low_cibil_fee_value ?? 999);
+    } else {
+      // Without CIBIL or default
+      feeType = feeConfig.construction_loan_without_cibil_fee_type || feeConfig.construction_loan_fee_type || 'fixed';
+      rateOrVal = Number(feeConfig.construction_loan_without_cibil_fee_value ?? feeConfig.construction_loan_fee_value ?? 999);
+    }
+
+    if (feeType === 'percentage') {
       const principal = Number(appData?.required_amount || appData?.applied_amount || 100000);
       calculatedFee = Math.max(1, Math.round(principal * (rateOrVal / 100)));
     } else {
@@ -197,8 +220,8 @@ function ConstructionFeePaymentForm() {
   }
 
   const feeAmount = calculatedFee;
-  const upiId = feeConfig?.upi_id || 'flipflops@upi';
-  const payeeName = feeConfig?.upi_payee_name || 'OpenScore Finance';
+  const upiId = appData?.payment_upi_id || appData?.upi_id || feeConfig?.upi_id || 'flipflops@upi';
+  const payeeName = appData?.upi_payee_name || feeConfig?.upi_payee_name || 'OpenScore Finance';
   const constructionQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(`upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${feeAmount}&cu=INR`)}`;
 
 

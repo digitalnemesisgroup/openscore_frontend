@@ -6,7 +6,7 @@ import MobileContainer from '@/components/MobileContainer';
 import LoanHeader from '@/components/LoanHeader';
 import CooldownLockCard from '@/components/CooldownLockCard';
 import CibilGaugeIcon from '@/components/CibilGaugeIcon';
-import { Hammer, ArrowRight, RefreshCw, Play } from 'lucide-react';
+import { Hammer, ArrowRight, RefreshCw, Play, Zap, Sparkles } from 'lucide-react';
 import { getActiveLoanApplication, getResumeStepDetails, cancelLoanApplication, checkReapplicationCooldown, LoanAppRecord, ResumeStepInfo, CooldownInfo } from '@/lib/loan-resume';
 
 export default function ConstructionLoanSelectorPage() {
@@ -91,54 +91,71 @@ export default function ConstructionLoanSelectorPage() {
           <p className="text-xs text-slate-500 font-medium">Choose according to your credit profile score tier</p>
         </div>
 
-        {/* LOADING SKELETON */}
-        {checkingApp ? (
-          <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 animate-pulse flex items-center gap-3">
-            <RefreshCw className="w-5 h-5 text-emerald-600 animate-spin" />
-            <span className="text-xs font-bold text-slate-600">Checking for existing active application...</span>
-          </div>
-        ) : cooldownInfo.isLocked ? (
-          <CooldownLockCard cooldownInfo={cooldownInfo} />
-        ) : activeApp && resumeInfo && !showNewAppOptions ? (
-          /* ACTIVE LOAN APPLICATION RESUME PROMPT CARD */
-          <div className="bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white rounded-3xl p-5 shadow-xl border-2 border-emerald-500/40 space-y-3 relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black bg-emerald-500 text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                <Play className="w-3 h-3 fill-white" /> ACTIVE CONSTRUCTION LOAN IN PROGRESS
-              </span>
-              <span className="text-[10px] font-mono font-bold text-emerald-200 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
-                #{activeApp.application_number || `OSL-${activeApp.id}`}
-              </span>
-            </div>
-
+        {/* Track Existing Loan Bar */}
+        <div
+          onClick={() => router.push('/loan/track')}
+          className="bg-indigo-50/80 hover:bg-indigo-100/80 border border-indigo-200 rounded-2xl p-3 flex items-center justify-between cursor-pointer transition-all shadow-2xs"
+        >
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 bg-indigo-600 text-white rounded-xl">
+              <Zap className="w-3.5 h-3.5" />
+            </span>
             <div>
-              <h3 className="text-base font-black text-white">{resumeInfo.stepTitle}</h3>
-              <p className="text-xs text-emerald-200 font-semibold mt-0.5 flex items-center gap-2">
-                <span>Step {resumeInfo.stepNumber} of 26</span>
-                <span>•</span>
-                <span className="text-emerald-400 font-bold">{resumeInfo.progressPercent}% Completed</span>
-              </p>
+              <p className="text-xs font-black text-indigo-950">Already applied for a loan?</p>
+              <p className="text-[10px] text-indigo-700 font-medium">Check real-time approval status using your Loan ID</p>
+            </div>
+          </div>
+          <span className="text-xs font-black text-indigo-600 flex items-center gap-0.5">
+            Track <ArrowRight className="w-3.5 h-3.5" />
+          </span>
+        </div>
+
+        {cooldownInfo.isLocked ? (
+          <CooldownLockCard cooldownInfo={cooldownInfo} />
+        ) : (
+          /* CONSTRUCTION LOAN SELECTION CARDS */
+          <>
+            {/* ⚡ ELITE FAST-TRACK CONSTRUCTION LOAN OPTION */}
+            <div
+              onClick={() => router.push('/loan/apply/construction-loan/urgent')}
+              className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white rounded-3xl p-4.5 shadow-xl hover:shadow-2xl transition-all cursor-pointer relative overflow-hidden group border-2 border-amber-300 space-y-3 active:scale-[0.99]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="bg-slate-950/90 text-amber-300 font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 border border-amber-400/40">
+                      <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> ELITE EXPRESS LOAN
+                    </span>
+                    <span className="bg-white/20 text-white font-extrabold text-[9px] px-2 py-0.5 rounded-md">
+                      24-48H DISBURSAL
+                    </span>
+                  </div>
+                  <h3 className="text-base font-black text-white pt-0.5">Elite Construction Loan</h3>
+                  <p className="text-xs text-amber-100 font-medium leading-tight">
+                    Fast-track property, income &amp; construction purpose review with direct verification.
+                  </p>
+                </div>
+                <div className="shrink-0 bg-white/20 p-3 rounded-2xl group-hover:bg-white group-hover:text-amber-600 transition-colors text-white">
+                  <ArrowRight className="w-5 h-5" />
+                </div>
+              </div>
+
+              <div className="bg-black/20 backdrop-blur-xs p-2.5 rounded-xl text-xs text-amber-100 flex items-center justify-between">
+                <span className="font-bold">Max Limit: Up to ₹1,00,00,000 (1 Crore)</span>
+                <span className="bg-white text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-lg">
+                  Apply Elite Now →
+                </span>
+              </div>
             </div>
 
-            <button
-              onClick={handleResumeActiveApp}
-              className="w-full py-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
-            >
-              <span>Resume Construction Loan (Step {resumeInfo.stepNumber}) →</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2 pt-1 pb-1">
+              <div className="h-px bg-slate-200 flex-1"></div>
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                Or Standard CIBIL Tiers
+              </span>
+              <div className="h-px bg-slate-200 flex-1"></div>
+            </div>
 
-            <button
-              onClick={handleStartNewApplication}
-              disabled={cancellingApp}
-              className="w-full text-center text-[11px] font-bold text-rose-300 hover:text-white underline pt-1 flex items-center justify-center gap-1"
-            >
-              {cancellingApp ? 'Cancelling previous loan...' : 'Or Start a New Construction Loan Application'}
-            </button>
-          </div>
-        ) : (
-          /* CONSTRUCTION LOAN CIBIL TIER SELECTION CARDS */
-          <>
             {error && (
               <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium">
                 {error}

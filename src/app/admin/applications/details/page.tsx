@@ -24,6 +24,7 @@ import VerificationTab from '@/components/admin/applications/VerificationTab';
 import BankDetailsTab from '@/components/admin/applications/BankDetailsTab';
 import DisbursementAgreementTab from '@/components/admin/applications/DisbursementAgreementTab';
 import ApplicationHeaderCard from '@/components/admin/applications/ApplicationHeaderCard';
+import { getCachedApplications, setCachedApplications } from '@/lib/loan-cache';
 
 function ApplicationDetailsContent() {
   const searchParams = useSearchParams();
@@ -31,8 +32,21 @@ function ApplicationDetailsContent() {
   const appIdParam = searchParams.get('id');
 
   const [activeSubTab, setActiveSubTab] = useState<string>('overview');
-  const [currentApp, setCurrentApp] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  
+  // Instant Initial Load from memory/local cache (0ms delay)
+  const [currentApp, setCurrentApp] = useState<any>(() => {
+    if (!appIdParam) return null;
+    const cached = getCachedApplications();
+    return (
+      cached.find(
+        (a: any) =>
+          String(a.id) === String(appIdParam) ||
+          String(a.application_number) === String(appIdParam)
+      ) || null
+    );
+  });
+
+  const [loading, setLoading] = useState<boolean>(() => !currentApp && Boolean(appIdParam));
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string>('');
 
@@ -44,29 +58,37 @@ function ApplicationDetailsContent() {
     }
 
     try {
-      setLoading(true);
-      // Fetch all applications and find target app, or fetch specific route
-      const res = await apiRequest('/admin/applications');
-      if (res && res.data && Array.isArray(res.data)) {
-        const found = res.data.find(
-          (a: any) =>
-            String(a.id) === String(appIdParam) ||
-            String(a.application_number) === String(appIdParam)
-        );
-        if (found) {
-          setCurrentApp(found);
-          setErrorMsg('');
-        } else {
-          // If not found in API list, use fallback if first item
-          if (res.data.length > 0) {
-            setCurrentApp(res.data[0]);
-          } else {
-            setErrorMsg(`Application #${appIdParam} not found.`);
-          }
+      // Direct fast single app fetch
+      let appData = null;
+      try {
+        const singleRes = await apiRequest(`/loan/applications/${appIdParam}`);
+        if (singleRes && singleRes.data) {
+          appData = singleRes.data;
+        }
+      } catch (e) {}
+
+      if (!appData) {
+        const res = await apiRequest('/admin/applications');
+        if (res && res.data && Array.isArray(res.data)) {
+          setCachedApplications(res.data);
+          appData = res.data.find(
+            (a: any) =>
+              String(a.id) === String(appIdParam) ||
+              String(a.application_number) === String(appIdParam)
+          ) || (res.data.length > 0 ? res.data[0] : null);
         }
       }
+
+      if (appData) {
+        setCurrentApp(appData);
+        setErrorMsg('');
+      } else if (!currentApp) {
+        setErrorMsg(`Application #${appIdParam} not found.`);
+      }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to load application details.');
+      if (!currentApp) {
+        setErrorMsg(err.message || 'Failed to load application details.');
+      }
     } finally {
       setLoading(false);
     }

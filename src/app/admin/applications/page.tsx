@@ -35,13 +35,12 @@ import DisbursementAgreementTab from '@/components/admin/applications/Disburseme
 import ApplicationHeaderCard from '@/components/admin/applications/ApplicationHeaderCard';
 import ApplicationsTable from '@/components/admin/applications/ApplicationsTable';
 
+import { getCachedApplications, setCachedApplications } from '@/lib/loan-cache';
+
 export function needsVerification(app: any): boolean {
   if (!app) return false;
   const status = (app.status || '').toLowerCase();
   const dec = (app.final_decision || '').toUpperCase();
-  const docStatus = (app.documents_status || '').toLowerCase();
-  const proofStatus = (app.proof_status || '').toLowerCase();
-  const bankStatus = (app.bank_details_status || '').toLowerCase();
 
   const isFinalDone =
     dec === 'APPROVED' ||
@@ -52,28 +51,57 @@ export function needsVerification(app: any): boolean {
     status === 'cancelled';
   if (isFinalDone) return false;
 
-  const isWithoutCibil =
-    app.loan_type === 'no_cibil' ||
-    app.loan_type === 'construction_no_cibil' ||
-    (app.loan_type || '').toLowerCase().includes('without');
-
-  if (isWithoutCibil && status !== 'cibil_tier_assigned') return true;
-  if (docStatus === 'pending' || status === 'documents_uploaded') return true;
-  if (proofStatus === 'pending' || status === 'proof_pending') return true;
-  if (bankStatus === 'pending' || status === 'bank_details_pending') return true;
-  if (
-    status === 'under_review' ||
-    status === 'in_review' ||
-    status === 'pending' ||
-    status === 'new' ||
-    status === 'additional_docs_submitted' ||
-    status === 'additional_docs_required' ||
-    status === 'indicative_approved'
-  ) {
-    return true;
-  }
-
   return true;
+}
+
+export function matchApplicationFilter(app: any, filterId: string): boolean {
+  if (!filterId || filterId === 'all') return true;
+  const status = (app.status || '').toLowerCase();
+  const dec = (app.final_decision || '').toUpperCase();
+  const disbStatus = (app.disbursement_status || '').toLowerCase();
+
+  switch (filterId) {
+    case 'new':
+      return (
+        status === 'new' ||
+        status === 'indicative_approved' ||
+        status === 'pending' ||
+        status === 'documents_pending' ||
+        status === 'documents_uploaded' ||
+        status === 'fee_payment_pending' ||
+        status === 'fee_submitted_pending_verification' ||
+        status === 'pending_partner_selection' ||
+        status === 'repayment_selected'
+      );
+    case 'in_review':
+      return (
+        status === 'under_review' ||
+        status === 'in_review' ||
+        status === 'proof_pending' ||
+        status === 'proof_submitted' ||
+        status === 'bank_details_pending' ||
+        status === 'additional_docs_submitted' ||
+        status === 'additional_docs_required' ||
+        status === 'cibil_tier_assigned' ||
+        needsVerification(app)
+      );
+    case 'approved':
+      return status === 'approved' || dec === 'APPROVED' || status === 'disbursement_pending';
+    case 'disbursement_pending':
+      return (
+        (status === 'approved' || dec === 'APPROVED' || status === 'disbursement_pending') &&
+        status !== 'disbursed' &&
+        disbStatus !== 'credited'
+      );
+    case 'disbursed':
+      return status === 'disbursed' || disbStatus === 'credited';
+    case 'rejected':
+      return status === 'rejected' || status === 'cancelled' || dec === 'REJECTED';
+    case 'reapply_3_days':
+      return Boolean(app.reapply_locked_until) || status === 'reapply_3_days';
+    default:
+      return status === filterId;
+  }
 }
 
 export default function AdminApplicationsPage({ defaultFilter = 'all' }: { defaultFilter?: string }) {
@@ -103,7 +131,9 @@ export default function AdminApplicationsPage({ defaultFilter = 'all' }: { defau
     }
   }, [defaultFilter]);
 
-  const [applications, setApplications] = useState<any[]>([]);
+  // Instant 0ms memory & local cache initialization
+  const [applications, setApplications] = useState<any[]>(() => getCachedApplications());
+  const [loading, setLoading] = useState<boolean>(() => getCachedApplications().length === 0);
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string>('');
   const [previewDocModal, setPreviewDocModal] = useState<{ title: string; src: string; verified: boolean } | null>(null);
@@ -130,13 +160,14 @@ export default function AdminApplicationsPage({ defaultFilter = 'all' }: { defau
   const fetchAdminData = async () => {
     try {
       const appsRes = await apiRequest('/admin/applications');
-      if (appsRes && appsRes.data && Array.isArray(appsRes.data) && appsRes.data.length > 0) {
+      if (appsRes && appsRes.data && Array.isArray(appsRes.data)) {
         setApplications(appsRes.data);
-      } else {
-        setApplications([]);
+        setCachedApplications(appsRes.data);
       }
     } catch (err) {
-      setApplications([]);
+      console.error('Failed to load applications:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -146,7 +177,7 @@ export default function AdminApplicationsPage({ defaultFilter = 'all' }: { defau
 
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'cash' | 'construction'>('all');
 
-  // Filter applications by status, category and search term
+  // Instant in-memory filtering by status, category and search term
   const filteredApplications = React.useMemo(() => {
     return applications.filter((app) => {
       // 0. Category Filter (Cash Loan vs Construction Loan)
@@ -157,25 +188,7 @@ export default function AdminApplicationsPage({ defaultFilter = 'all' }: { defau
 
       // 1. Status Filter
       if (selectedFilter && selectedFilter !== 'all') {
-        const status = (app.status || '').toLowerCase();
-        if (selectedFilter === 'new') {
-          if (status !== 'new' && status !== 'indicative_approved' && status !== 'pending') return false;
-        } else if (selectedFilter === 'in_review') {
-          if (!needsVerification(app)) return false;
-        } else if (selectedFilter === 'approved') {
-          if (status !== 'approved') return false;
-        } else if (selectedFilter === 'rejected') {
-          const dec = (app.final_decision || '').toUpperCase();
-          if (status !== 'rejected' && status !== 'cancelled' && dec !== 'REJECTED') return false;
-        } else if (selectedFilter === 'disbursement_pending') {
-          if (status !== 'disbursement_pending') return false;
-        } else if (selectedFilter === 'disbursed') {
-          if (status !== 'disbursed') return false;
-        } else if (selectedFilter === 'reapply_3_days') {
-          if (status !== 'reapply_3_days') return false;
-        } else if (status !== selectedFilter) {
-          return false;
-        }
+        if (!matchApplicationFilter(app, selectedFilter)) return false;
       }
 
       // 2. Search Term Filter
@@ -417,19 +430,13 @@ export default function AdminApplicationsPage({ defaultFilter = 'all' }: { defau
           const isActive = selectedFilter === filter.id;
           const count = filter.id === 'all'
             ? applications.length
-            : applications.filter((a) => {
-                const st = (a.status || '').toLowerCase();
-                if (filter.id === 'new') return st === 'new' || st === 'indicative_approved' || st === 'pending';
-                if (filter.id === 'in_review') return needsVerification(a);
-                if (filter.id === 'rejected') return st === 'rejected' || st === 'cancelled' || (a.final_decision || '').toUpperCase() === 'REJECTED';
-                return st === filter.id;
-              }).length;
+            : applications.filter((a) => matchApplicationFilter(a, filter.id)).length;
 
           return (
             <button
               key={filter.id}
               onClick={() => setSelectedFilter(filter.id)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-colors flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer ${
                 isActive ? 'bg-slate-900 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -445,7 +452,16 @@ export default function AdminApplicationsPage({ defaultFilter = 'all' }: { defau
       </div>
 
       {/* Applications List Table Section */}
-      {filteredApplications.length > 0 ? (
+      {loading && applications.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 space-y-4 shadow-2xs animate-pulse">
+          <div className="h-5 bg-slate-200 rounded w-1/4" />
+          <div className="space-y-3 pt-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-12 bg-slate-100 rounded-xl" />
+            ))}
+          </div>
+        </div>
+      ) : filteredApplications.length > 0 ? (
         <ApplicationsTable
           filteredApplications={filteredApplications}
           paginatedApplications={paginatedApplications}
@@ -469,13 +485,13 @@ export default function AdminApplicationsPage({ defaultFilter = 'all' }: { defau
           </p>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             {applications.length === 0
-              ? 'There are no loan applications in the MySQL database yet. Use the Apply New Loan button above to create the first one.'
+              ? 'There are no loan applications in the database yet. Use the Apply New Loan button above to create the first one.'
               : `There are currently 0 applications matching the status "${selectedFilter.replace(/_/g, ' ')}". Try switching to "All Applications" above.`}
           </p>
           {applications.length > 0 && (
             <button
               onClick={() => setSelectedFilter('all')}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
             >
               Show All {applications.length} Applications
             </button>

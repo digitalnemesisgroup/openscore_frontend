@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Upload, CheckCircle2, Eye, ShieldCheck, Sparkles, RefreshCw, X, FileText, Check, AlertCircle, ExternalLink, Download, XCircle } from 'lucide-react';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, resolveMediaUrl } from '@/lib/api';
 
 interface DocumentsTabProps {
   currentApp: any;
@@ -31,16 +31,17 @@ export default function DocumentsTab({ currentApp }: DocumentsTabProps) {
   const getDocData = (docKey: string, defaultName: string) => {
     const d = parsedDocs?.[docKey];
     if (!d) return { file: defaultName, preview: null, uploaded: false };
-    if (typeof d === 'string') return { file: d, preview: d.startsWith('data:') || d.startsWith('http') || d.startsWith('/') ? d : null, uploaded: true };
+    const resolved = resolveMediaUrl(d);
+    if (typeof d === 'string') return { file: d, preview: resolved || null, uploaded: true };
     if (typeof d === 'object') {
       return {
         file: d.name || d.file || defaultName,
-        preview: d.preview || d.url || d.path || null,
+        preview: resolved || resolveMediaUrl(d.preview || d.url || d.path) || null,
         size: d.size || null,
-        uploaded: Boolean(d.uploaded || d.name || d.preview),
+        uploaded: Boolean(d.uploaded || d.name || d.preview || d.base64 || d.url),
       };
     }
-    return { file: defaultName, preview: null, uploaded: Boolean(d) };
+    return { file: defaultName, preview: resolved || null, uploaded: Boolean(d) };
   };
 
   const panNo = currentApp?.pan_number || 'ABCDE1234F';
@@ -477,12 +478,25 @@ export default function DocumentsTab({ currentApp }: DocumentsTabProps) {
 
                 {/* SEPARATE APPROVE & REJECT ACTION BUTTONS FOR EACH DOCUMENT */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/70">
-                  <button
-                    onClick={() => setPreviewDoc({ ...doc, effectivePreview: imageSrc })}
-                    className="px-2.5 py-1.5 bg-white hover:bg-blue-50 border border-slate-200 text-blue-700 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5 text-blue-600" /> View Image
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDoc({ ...doc, effectivePreview: imageSrc })}
+                      className="px-2.5 py-1.5 bg-white hover:bg-blue-50 border border-slate-200 text-blue-700 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-blue-600" /> Preview
+                    </button>
+                    {imageSrc && !imageSrc.startsWith('data:image/svg') && (
+                      <a
+                        href={imageSrc}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-xl text-[11px] font-bold flex items-center gap-1 border border-slate-200 transition-colors"
+                      >
+                        <ExternalLink className="w-3 h-3 text-blue-600" /> Direct Link ↗
+                      </a>
+                    )}
+                  </div>
 
                   <div className="flex items-center gap-1.5">
                     <button

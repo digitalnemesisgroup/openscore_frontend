@@ -94,37 +94,45 @@ export default function ResumeLoanCard({
     );
   }
 
-  // CLEAN, SLEEK, COMPACT RESUME BANNER (ONLY RESUME BUTTON & STATUS)
+  // Dedicated Track Loan Status Banner
   return (
-    <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-3.5 shadow-xl border border-indigo-500/40 relative overflow-hidden animate-in fade-in duration-300">
-      {/* Ambient background glow */}
+    <div
+      onClick={() => router.push('/loan/track')}
+      className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-3.5 shadow-xl border border-indigo-500/40 relative overflow-hidden cursor-pointer hover:border-indigo-400/80 transition-all active:scale-[0.99] group"
+    >
       <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/15 rounded-full blur-2xl pointer-events-none" />
 
       <div className="flex items-center justify-between gap-3 relative z-10">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-400"></span>
             </span>
-            <span className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider">
-              {activeCount > 1 ? `${activeCount} Applications In Progress` : 'Application In Progress'}
+            <span className="text-[10px] font-extrabold text-indigo-300 uppercase tracking-wider">
+              Real-time Tracker
             </span>
           </div>
-          <h3 className="text-xs font-black text-white truncate">
-            Resume Your Loan Application
+          <h3 className="text-xs font-black text-white truncate flex items-center gap-1.5">
+            <span>Track Application Status</span>
+            <span className="text-[9px] bg-white/20 text-indigo-100 px-1.5 py-0.2 rounded font-bold">
+              By Loan ID
+            </span>
           </h3>
           <p className="text-[10px] text-slate-300 font-medium truncate">
-            Continue from your last completed step
+            Check real-time verification &amp; approval updates
           </p>
         </div>
 
         <button
-          onClick={() => router.push('/loan/resume')}
-          className="py-2.5 px-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer shrink-0 border border-purple-400/40"
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            router.push('/loan/track');
+          }}
+          className="py-2 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1 transition-all shrink-0 border border-indigo-400/40"
         >
-          <span>Resume</span>
-          <ArrowRight className="w-3.5 h-3.5" />
+          <span>Track Status</span>
+          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </button>
       </div>
     </div>

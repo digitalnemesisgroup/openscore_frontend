@@ -32,6 +32,7 @@ import {
   CheckCheck,
   FileSearch,
   AlertTriangle,
+  Zap,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
@@ -80,29 +81,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   });
 
   const [userCount, setUserCount] = useState<number>(0);
+  const [urgentCount, setUrgentCount] = useState<number>(0);
 
   useEffect(() => {
     if (user && user.role === 'admin') {
-      apiRequest('/admin/applications')
+      // Use ultra-fast stats endpoint
+      apiRequest('/admin/stats')
         .then((res) => {
-          if (res && res.data && Array.isArray(res.data)) {
-            const apps = res.data;
+          if (res && res.data) {
+            const d = res.data;
             setAppCounts({
-              total: apps.length,
-              new: apps.filter((a: any) => {
-                const s = (a.status || '').toLowerCase();
-                return s === 'new' || s === 'indicative_approved' || s === 'pending';
-              }).length,
-              in_review: apps.filter((a: any) => {
-                const s = (a.status || '').toLowerCase();
-                return s === 'under_review' || s === 'in_review';
-              }).length,
-              approved: apps.filter((a: any) => (a.status || '').toLowerCase() === 'approved').length,
-              rejected: apps.filter((a: any) => (a.status || '').toLowerCase() === 'rejected').length,
-              disbursement_pending: apps.filter((a: any) => (a.status || '').toLowerCase() === 'disbursement_pending').length,
-              disbursed: apps.filter((a: any) => (a.status || '').toLowerCase() === 'disbursed').length,
-              reapply_3_days: apps.filter((a: any) => (a.status || '').toLowerCase() === 'reapply_3_days').length,
+              total: d.total_applications ?? 0,
+              new: d.new_applications ?? 0,
+              in_review: d.in_review ?? 0,
+              approved: d.approved ?? 0,
+              rejected: d.rejected ?? 0,
+              disbursement_pending: d.disbursement_pending ?? 0,
+              disbursed: d.disbursed ?? 0,
+              reapply_3_days: d.reapply_3_days ?? 0,
             });
+          }
+        })
+        .catch(() => {});
+
+      // Fetch Urgent Loans stats
+      apiRequest('/admin/urgent-construction-loans?per_page=1')
+        .then((res) => {
+          if (res && res.stats) {
+            setUrgentCount(res.stats.under_review + res.stats.docs_required + res.stats.technical_verification || res.stats.total || 0);
           }
         })
         .catch(() => {});
@@ -464,6 +470,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* Distinct Page Route Sidebar Items */}
             {[
+              { href: '/admin/urgent-loans', label: 'Urgent Loans', icon: Zap, count: urgentCount },
               { href: '/admin/partners', label: 'Partner / Lender', icon: Building2 },
               { href: '/admin/disbursement', label: 'Disbursement', icon: CreditCard },
               { href: '/admin/users', label: 'User Management', icon: Users, count: userCount },
