@@ -193,8 +193,8 @@ export default function VirtualLoanApplyPage() {
     fileInputRefs.current[key]?.click();
   };
 
-  // Step 3: Payment & Fee Consent states
-  const [feePaymentStep, setFeePaymentStep] = useState<'consent' | 'pay'>('consent');
+  // Step 3: Multi-stage post-validation flow: 'approved_card' -> 'sanction_letter' -> 'fee_consent' -> 'payment'
+  const [postValidationStage, setPostValidationStage] = useState<'approved_card' | 'sanction_letter' | 'fee_consent' | 'payment'>('approved_card');
   const [consentChecked, setConsentChecked] = useState<boolean>(false);
   const [paymentScreenshot, setPaymentScreenshot] = useState<string>('');
   const [payingFee, setPayingFee] = useState<boolean>(false);
@@ -455,15 +455,25 @@ export default function VirtualLoanApplyPage() {
             ? 'Apply for Virtual Loan'
             : currentStep === 2
             ? 'KYC & Documents'
-            : feePaymentStep === 'consent'
+            : postValidationStage === 'approved_card'
+            ? 'Credit Approved'
+            : postValidationStage === 'sanction_letter'
+            ? 'Sanction Letter'
+            : postValidationStage === 'fee_consent'
             ? 'Fee Authorization & Consent'
             : 'UPI Payment & Proof'
         }
         stepNumber={isValidating ? 2 : currentStep}
         totalSteps={3}
         onBackClick={
-          currentStep === 3 && feePaymentStep === 'pay'
-            ? () => setFeePaymentStep('consent')
+          currentStep === 3
+            ? postValidationStage === 'sanction_letter'
+              ? () => setPostValidationStage('approved_card')
+              : postValidationStage === 'fee_consent'
+              ? () => setPostValidationStage('sanction_letter')
+              : postValidationStage === 'payment'
+              ? () => setPostValidationStage('fee_consent')
+              : undefined
             : undefined
         }
       />
@@ -1008,8 +1018,205 @@ export default function VirtualLoanApplyPage() {
           </div>
         )}
 
-        {/* STEP 3 - SUBSTEP 1: ITEMIZE BREAKDOWN & MANDATORY CONSENT */}
-        {currentStep === 3 && !isValidating && feePaymentStep === 'consent' && (
+        {/* ========================================================================= */}
+        {/* STEP 3: POST-VALIDATION SEQUENCE                                          */}
+        {/* 1. Approved Card -> 2. Sanction Letter -> 3. Fee Consent -> 4. Payment    */}
+        {/* ========================================================================= */}
+
+        {/* --- STAGE 1: CREDIT APPROVED HERO CARD --- */}
+        {currentStep === 3 && !isValidating && postValidationStage === 'approved_card' && (
+          <div className="space-y-4 animate-in zoom-in-95 duration-200">
+            {/* GREEN CHECK HERO BANNER */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 text-center space-y-3 shadow-md relative overflow-hidden">
+              <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-lg ring-4 ring-emerald-100 animate-bounce">
+                <Check className="w-10 h-10 stroke-[3]" />
+              </div>
+
+              <div>
+                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  Verification Successful
+                </span>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight mt-1">
+                  Your Credit Has Been Approved! 🎉
+                </h2>
+                <p className="text-xs text-slate-500 font-medium max-w-xs mx-auto mt-1">
+                  Congratulations <span className="font-bold text-slate-900">{fullName}</span>! Your virtual loan credit line of <strong className="text-emerald-600">₹{selectedAmount.toLocaleString('en-IN')}</strong> has been approved and pre-allocated to your profile.
+                </p>
+              </div>
+
+              {/* APPROVED CREDIT SUMMARY BOX */}
+              <div className="bg-gradient-to-br from-emerald-50/50 via-slate-50 to-blue-50/40 border border-slate-200 p-4 rounded-2xl grid grid-cols-2 gap-2 text-left pt-3 shadow-2xs">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">Approved Credit Limit</span>
+                  <span className="text-2xl font-black text-emerald-600">
+                    ₹{selectedAmount.toLocaleString('en-IN')}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block">Product Type</span>
+                  <span className="text-xs font-black text-slate-900 block mt-1">
+                    OpenScore Virtual Line
+                  </span>
+                </div>
+
+                <div className="col-span-2 pt-2 border-t border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">Repayment Tenor</span>
+                    <span className="text-xs font-bold text-slate-700">30 - 90 Days Flexible</span>
+                  </div>
+                  <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-black px-2.5 py-0.5 rounded-full">
+                    Pre-Approved ✓
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* CALLOUT INFO */}
+            <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-2xl flex items-start gap-3 text-blue-900 shadow-2xs">
+              <Sparkles className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+              <p className="text-xs font-bold leading-relaxed">
+                Your pre-approved sanction letter has been generated. Unlock your credit limit now to review your official letter and complete nominal activation.
+              </p>
+            </div>
+
+            {/* UNLOCK CREDIT BUTTON */}
+            <button
+              type="button"
+              onClick={() => setPostValidationStage('sanction_letter')}
+              className="w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:opacity-95 active:scale-[0.99] text-white font-black text-sm rounded-2xl shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <Zap className="w-4 h-4 fill-white" />
+              <span>Unlock Credit Limit</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* --- STAGE 2: FORMAL SANCTION LETTER --- */}
+        {currentStep === 3 && !isValidating && postValidationStage === 'sanction_letter' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            {/* Header & Back Button */}
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-900 px-2.5 py-0.5 rounded-full border border-blue-200 inline-flex items-center gap-1 mb-1">
+                  <BadgeCheck className="w-3 h-3 text-blue-600" />
+                  Official Sanction Letter
+                </span>
+                <h1 className="text-xl font-black text-slate-900">Credit Sanction Letter</h1>
+                <p className="text-xs text-slate-500 font-medium">
+                  Review your in-principle credit facility terms
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPostValidationStage('approved_card')}
+                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 cursor-pointer"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                <span>Back</span>
+              </button>
+            </div>
+
+            {/* FORMAL SANCTION LETTER DOCUMENT CARD */}
+            <div className="bg-white border-2 border-slate-300 rounded-3xl p-5 shadow-md space-y-4 relative overflow-hidden">
+              {/* Top Letterhead */}
+              <div className="border-b-2 border-slate-200 pb-3 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-black tracking-tight text-slate-900 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-blue-600" />
+                    OpenScore Digital Credit
+                  </h3>
+                  <p className="text-[9px] text-slate-400 uppercase tracking-wider font-bold">
+                    National Lending &amp; Credit Facilitation Network
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] font-mono text-slate-500 block">
+                    Ref: OSV/SANC/{appId ? String(appId).padStart(4, '0') : '2026'}/9081
+                  </span>
+                  <span className="text-[9px] text-slate-400 font-bold block">
+                    Date: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Subject */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800">
+                <span className="font-bold text-slate-900 block">Subject:</span>
+                <span className="font-semibold text-slate-700">
+                  In-Principle Sanction of OpenScore Virtual Credit Limit Line
+                </span>
+              </div>
+
+              {/* Greeting & Text */}
+              <div className="text-xs text-slate-600 leading-relaxed space-y-1.5">
+                <p>
+                  Dear <strong className="text-slate-900">{fullName}</strong>,
+                </p>
+                <p>
+                  We are pleased to inform you that based on your automated KYC evaluation and identity verification, your application for an <strong>OpenScore Virtual Credit Line</strong> has been sanctioned in-principle under the following approved terms:
+                </p>
+              </div>
+
+              {/* Sanction Details Grid */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2 text-xs">
+                <div className="flex justify-between py-1 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Applicant Name</span>
+                  <span className="font-black text-slate-900">{fullName}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Registered Mobile</span>
+                  <span className="font-bold text-slate-900">+91 {mobileNumber}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Sanctioned Credit Limit</span>
+                  <span className="font-black text-emerald-600 text-sm">
+                    ₹{selectedAmount.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Facility Type</span>
+                  <span className="font-bold text-slate-900">Revolving Digital Credit</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Validity / Cycle</span>
+                  <span className="font-bold text-slate-900">30 - 90 Days</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-slate-500 font-medium">Sanction Status</span>
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                    Approved &amp; Reserved ✓
+                  </span>
+                </div>
+              </div>
+
+              {/* Seal & Stamp Footer */}
+              <div className="pt-2 flex items-center justify-between border-t border-slate-200 text-[10px]">
+                <div className="flex items-center gap-1 text-slate-500">
+                  <Lock className="w-3 h-3 text-emerald-600" />
+                  <span>Digitally Generated &amp; Signed</span>
+                </div>
+                <span className="font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                  Authorized Underwriting
+                </span>
+              </div>
+            </div>
+
+            {/* PROCEED TO FEE CONSENT BUTTON */}
+            <button
+              type="button"
+              onClick={() => setPostValidationStage('fee_consent')}
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-black text-sm rounded-2xl shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <span>Accept Sanction &amp; Proceed to Fee Consent</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* --- STAGE 3: FEE BREAKDOWN & MANDATORY CONSENT --- */}
+        {currentStep === 3 && !isValidating && postValidationStage === 'fee_consent' && (
           <div className="space-y-4 animate-in fade-in duration-300">
             {/* Top Reference & Breadcrumb Header */}
             <div className="flex items-center justify-between">
@@ -1023,9 +1230,14 @@ export default function VirtualLoanApplyPage() {
                   Review fee breakdown and confirm authorization
                 </p>
               </div>
-              <span className="text-[10px] font-mono font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-                #{appId ? `OSV${appId}` : 'OSV-2026'}
-              </span>
+              <button
+                type="button"
+                onClick={() => setPostValidationStage('sanction_letter')}
+                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 cursor-pointer"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                <span>Back</span>
+              </button>
             </div>
 
             {error && (
@@ -1040,7 +1252,7 @@ export default function VirtualLoanApplyPage() {
               <div className="flex items-center justify-between border-b border-blue-800/60 pb-2.5">
                 <span className="text-[11px] font-bold text-blue-200 flex items-center gap-1.5">
                   <BadgeCheck className="w-4 h-4 text-emerald-400" />
-                  Documents Verified &amp; Pre-Approved
+                  Sanction Confirmed
                 </span>
                 <span className="text-[10px] font-mono font-bold bg-blue-500/20 text-blue-200 px-2 py-0.5 rounded-md border border-blue-400/30">
                   Virtual Cash Limit
@@ -1052,7 +1264,7 @@ export default function VirtualLoanApplyPage() {
                   <span className="font-black text-white">{fullName}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-blue-300 block font-medium">Pre-Approved Limit</span>
+                  <span className="text-[10px] text-blue-300 block font-medium">Sanctioned Limit</span>
                   <span className="font-black text-emerald-400">
                     ₹{selectedAmount.toLocaleString('en-IN')}
                   </span>
@@ -1061,7 +1273,7 @@ export default function VirtualLoanApplyPage() {
               <div className="pt-2 border-t border-blue-900/60 flex items-center justify-between text-[11px]">
                 <span className="text-blue-300">Status</span>
                 <span className="bg-blue-500/20 text-blue-200 border border-blue-400/40 px-2 py-0.5 rounded-full font-bold">
-                  Pre-Approved (Pending Activation Review)
+                  Pending Activation Review
                 </span>
               </div>
             </div>
@@ -1146,7 +1358,7 @@ export default function VirtualLoanApplyPage() {
                   return;
                 }
                 setError('');
-                setFeePaymentStep('pay');
+                setPostValidationStage('payment');
               }}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-black text-sm rounded-2xl shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
@@ -1156,8 +1368,8 @@ export default function VirtualLoanApplyPage() {
           </div>
         )}
 
-        {/* STEP 3 - SUBSTEP 2: SCAN & PAY VIA UPI */}
-        {currentStep === 3 && !isValidating && feePaymentStep === 'pay' && (
+        {/* --- STAGE 4: SCAN & PAY VIA UPI --- */}
+        {currentStep === 3 && !isValidating && postValidationStage === 'payment' && (
           <div className="space-y-4 animate-in fade-in duration-300">
             {/* Top Reference & Breadcrumb Header */}
             <div className="flex items-center justify-between">
@@ -1173,7 +1385,7 @@ export default function VirtualLoanApplyPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setFeePaymentStep('consent')}
+                onClick={() => setPostValidationStage('fee_consent')}
                 className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 cursor-pointer"
               >
                 <ArrowLeft className="w-3 h-3" />
