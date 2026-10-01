@@ -68,8 +68,8 @@ function ApplicantDetailsForm() {
               mobile_number: appRecord.mobile_number || prev.mobile_number,
               pan_number: appRecord.pan_number || prev.pan_number,
               aadhaar_number: appRecord.aadhaar_number || prev.aadhaar_number,
-              dob: appRecord.dob || prev.dob,
-              gender: appRecord.gender || prev.gender,
+              dob: (appRecord as any).dob || prev.dob,
+              gender: (appRecord as any).gender || prev.gender,
               monthly_income: appRecord.monthly_income ? String(appRecord.monthly_income) : prev.monthly_income,
               required_amount: appRecord.required_amount ? String(appRecord.required_amount) : prev.required_amount,
             }));
