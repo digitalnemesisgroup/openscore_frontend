@@ -292,16 +292,17 @@ export default function VirtualLoanApplyPage() {
     fetchSettings();
   }, []);
 
-  // Get current applicable fee for selected amount dynamically
-  const currentFee = React.useMemo(() => {
+  const getFeeForAmount = React.useCallback((amount: number) => {
     if (feeConfig && feeConfig.virtual_loan_fee_value !== undefined) {
       if (feeConfig.virtual_loan_fee_type === 'percentage') {
-        return Math.max(1, Math.round(selectedAmount * (Number(feeConfig.virtual_loan_fee_value) / 100)));
+        return Math.max(1, Math.round(amount * (Number(feeConfig.virtual_loan_fee_value) / 100)));
       }
       return Number(feeConfig.virtual_loan_fee_value);
     }
-    return feeStructure.find((f) => f.amount === selectedAmount)?.fee || 3000;
-  }, [selectedAmount, feeConfig, feeStructure]);
+    return feeStructure.find((f) => f.amount === amount)?.fee || 3000;
+  }, [feeConfig, feeStructure]);
+
+  const currentFee = getFeeForAmount(selectedAmount);
 
 
   // Submit Step 1: Select Amount & Basic Details
@@ -538,7 +539,7 @@ export default function VirtualLoanApplyPage() {
                         <div>
                           <p className="text-sm font-black text-slate-900">₹ {item.amount.toLocaleString('en-IN')}</p>
                           <p className="text-[11px] text-slate-500 font-semibold">
-                            {feeLabel}: ₹ {item.fee.toLocaleString('en-IN')}
+                            {feeLabel}: ₹ {getFeeForAmount(item.amount).toLocaleString('en-IN')}
                           </p>
                         </div>
                       </div>
