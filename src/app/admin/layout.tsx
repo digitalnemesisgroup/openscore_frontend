@@ -41,7 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
 
   // Admin Login States
-  const [adminMobile, setAdminMobile] = useState<string>('9999999999');
+  const [adminMobile, setAdminMobile] = useState<string>('');
   const [adminPin, setAdminPin] = useState<string>('');
   const [adminAuthError, setAdminAuthError] = useState<string>('');
   const [adminAuthSubmitting, setAdminAuthSubmitting] = useState<boolean>(false);
@@ -217,7 +217,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 required
                 value={adminMobile}
                 onChange={(e) => setAdminMobile(e.target.value)}
-                placeholder="9999999999"
+                placeholder="Enter Mobile Number"
                 className="w-full py-3.5 px-4 bg-slate-950 border border-slate-800 rounded-2xl text-sm font-bold text-white focus:outline-none focus:border-blue-500 shadow-inner"
               />
             </div>
@@ -244,10 +244,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
           </form>
 
-          <div className="p-3 bg-slate-950/80 rounded-2xl border border-slate-800 text-[11px] text-slate-400 font-semibold space-y-1">
-            <p className="text-slate-300 font-bold">Default Admin Credentials:</p>
-            <p>Mobile: <span className="text-blue-400 font-bold">9999999999</span> | PIN: <span className="text-blue-400 font-bold">1234</span></p>
-          </div>
+
         </div>
       </div>
     );
