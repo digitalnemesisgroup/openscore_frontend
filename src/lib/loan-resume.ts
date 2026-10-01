@@ -87,12 +87,19 @@ export function formatLoanType(type?: string): string {
 export function getUserMobileQuery(): string {
   if (typeof window === 'undefined') return '';
   try {
+    // 1. Try from the logged-in user object
     const userStr = localStorage.getItem('openscore_user') || localStorage.getItem('user');
     if (userStr) {
       const u = JSON.parse(userStr);
-      if (u && u.mobile) {
-        return `?mobile=${encodeURIComponent(u.mobile)}`;
-      }
+      if (u && u.mobile) return `?mobile=${encodeURIComponent(u.mobile)}`;
+      if (u && u.phone) return `?mobile=${encodeURIComponent(u.phone)}`;
+    }
+  } catch (e) {}
+  try {
+    // 2. Fallback: direct user_mobile key saved by loan apply flows
+    const directMobile = localStorage.getItem('user_mobile') || localStorage.getItem('user_phone');
+    if (directMobile && directMobile.trim()) {
+      return `?mobile=${encodeURIComponent(directMobile.trim())}`;
     }
   } catch (e) {}
   return '';

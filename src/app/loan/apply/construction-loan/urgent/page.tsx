@@ -195,6 +195,9 @@ export default function UrgentConstructionLoanFormPage() {
         const appId = res.data.id;
         if (typeof window !== 'undefined') {
           localStorage.setItem('active_urgent_loan_app_id', String(appId));
+          if (mobileNumber.trim()) {
+            localStorage.setItem('user_mobile', mobileNumber.trim());
+          }
         }
         router.push(`/loan/apply/construction-loan/urgent/validate?id=${appId}`);
       }

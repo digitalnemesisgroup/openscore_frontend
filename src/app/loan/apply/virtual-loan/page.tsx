@@ -326,6 +326,9 @@ export default function VirtualLoanApplyPage() {
       if (res && res.data) {
         setAppId(res.data.id);
         setAppStatus(res.data.status);
+        if (typeof window !== 'undefined' && mobileNumber.trim()) {
+          localStorage.setItem('user_mobile', mobileNumber.trim());
+        }
         setCurrentStep(2); // Advance to Documents Upload step
       }
     } catch (err: any) {
