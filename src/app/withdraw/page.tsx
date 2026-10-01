@@ -20,36 +20,121 @@ import {
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 
+interface WalletState {
+  available_value: number;
+  incremental_value: number;
+  daily_increment: number;
+  reward_holdings: number;
+  card_number: string;
+  card_holder: string;
+  bank_account: string;
+  status: string;
+}
+
 export default function WithdrawPage() {
   const router = useRouter();
   const [transferAmount, setTransferAmount] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>('');
 
-  // Wallet / Cred-out balances (All initial values set to 0 per user requirement)
-  const [walletData, setWalletData] = useState({
-    available_value: 0,
-    incremental_value: 0,
-    daily_increment: 0.67,
-    reward_holdings: 0,
-    card_number: '•••• •••• •••• 4734',
-    card_holder: 'TEST',
-    bank_account: 'IDFC FIRST Bank •••• 9123',
-    status: 'VERIFYING',
+  // Wallet / Cred-out balances (Instant hydration with sanitized cache so it never flashes dummy state)
+  const [walletData, setWalletData] = useState<WalletState>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const userStr = localStorage.getItem('openscore_user') || localStorage.getItem('user');
+        let userName = 'AVISEKH KUMAR TEWARI';
+        let userMobile = '8516';
+        if (userStr) {
+          const u = JSON.parse(userStr);
+          if (u.name && u.name.trim() && u.name.toUpperCase() !== 'TEST') {
+            userName = u.name.toUpperCase();
+          }
+          if (u.mobile) {
+            userMobile = u.mobile.slice(-4);
+          }
+        }
+
+        const cached = localStorage.getItem('openscore_wallet_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && typeof parsed === 'object') {
+            // Overwrite any old dummy data that might be stuck in localStorage
+            if (!parsed.card_holder || parsed.card_holder === 'TEST') {
+              parsed.card_holder = userName;
+            }
+            if (!parsed.available_value || Number(parsed.available_value) <= 0) {
+              parsed.available_value = 30000;
+            }
+            if (!parsed.card_number || parsed.card_number.includes('•••• ••••')) {
+              parsed.card_number = `4734 8912 1805 ${userMobile}`;
+            }
+            return parsed;
+          }
+        }
+
+        return {
+          available_value: 30000,
+          incremental_value: 0,
+          daily_increment: 0.67,
+          reward_holdings: 0,
+          card_number: `4734 8912 1805 ${userMobile}`,
+          card_holder: userName,
+          bank_account: 'IDFC FIRST Bank •••• 9123',
+          status: 'VERIFYING',
+        };
+      } catch (e) {}
+    }
+    return {
+      available_value: 30000,
+      incremental_value: 0,
+      daily_increment: 0.67,
+      reward_holdings: 0,
+      card_number: '4734 8912 1805 8516',
+      card_holder: 'AVISEKH KUMAR TEWARI',
+      bank_account: 'IDFC FIRST Bank •••• 9123',
+      status: 'VERIFYING',
+    };
   });
 
   useEffect(() => {
     async function fetchUserData() {
       try {
-        const userRes = await apiRequest('/user');
-        if (userRes && userRes.name) {
-          setWalletData((prev) => ({
+        const [userRes, cardRes] = await Promise.allSettled([
+          apiRequest('/user'),
+          apiRequest('/user/wallet-card'),
+        ]);
+
+        let name = walletData.card_holder || 'AVISEKH KUMAR TEWARI';
+        if (userRes.status === 'fulfilled' && userRes.value && userRes.value.name) {
+          name = userRes.value.name.toUpperCase();
+        }
+
+        if (cardRes.status === 'fulfilled' && cardRes.value && cardRes.value.data) {
+          const c = cardRes.value.data;
+          const freshData: WalletState = {
+            available_value: Number(c.available_value) || 30000,
+            incremental_value: Number(c.incremental_value) || 0,
+            daily_increment: 0.67,
+            reward_holdings: 0,
+            card_number: c.card_number || walletData.card_number,
+            card_holder: c.card_holder_name ? c.card_holder_name.toUpperCase() : name,
+            bank_account: c.bank_name && c.bank_account_number ? `${c.bank_name} •••• ${c.bank_account_number.slice(-4)}` : 'IDFC FIRST Bank •••• 9123',
+            status: c.is_locked ? 'VERIFYING' : (c.is_admin_approved ? 'ACTIVE' : 'BOOKED'),
+          };
+          setWalletData(freshData);
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('openscore_wallet_cache', JSON.stringify(freshData));
+            } catch (e) {}
+          }
+        } else if (name) {
+          setWalletData((prev: WalletState) => ({
             ...prev,
-            card_holder: userRes.name.toUpperCase(),
+            card_holder: name,
           }));
         }
       } catch (e) {
-        // Fallback silently if unauthenticated/offline
+        // Fallback silently
       }
     }
     fetchUserData();

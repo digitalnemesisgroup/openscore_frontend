@@ -419,61 +419,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             </Link>
 
-            {/* Loan Applications (Expandable Menu with Distinct Filter Routes) */}
-            <div>
-              <div
-                onClick={() => setIsAppListExpanded(!isAppListExpanded)}
-                className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between cursor-pointer transition-colors ${
-                  pathname.startsWith('/admin/applications') ? 'bg-blue-600 text-white font-bold' : 'hover:bg-slate-800/80 text-slate-300'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <FileText className="w-4 h-4 shrink-0" />
-                  <span className={!isSidebarOpen ? 'lg:hidden' : ''}>Loan Applications</span>
-                </div>
-                <div className={`flex items-center gap-1.5 ${!isSidebarOpen ? 'lg:hidden' : ''}`}>
-                  <span className="px-1.5 py-0.5 bg-rose-500 text-white text-[10px] font-black rounded-md">{appCounts.total}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isAppListExpanded ? 'rotate-180' : ''}`} />
-                </div>
-              </div>
 
-              {/* Sub-menu Route Filter Items */}
-              {isAppListExpanded && (
-                <div className="mt-1 ml-4 pl-3 border-l border-slate-700/60 space-y-0.5 text-[11px]">
-                  {[
-                    { href: '/admin/applications', label: 'All Applications', count: appCounts.total },
-                    { href: '/admin/applications/new', label: 'New Applications', count: appCounts.new },
-                    { href: '/admin/applications/in-review', label: 'In Review', count: appCounts.in_review },
-                    { href: '/admin/applications/approved', label: 'Approved', count: appCounts.approved },
-                    { href: '/admin/applications/rejected', label: 'Rejected', count: appCounts.rejected },
-                    { href: '/admin/applications/disbursement-pending', label: 'Disbursement Pending', count: appCounts.disbursement_pending },
-                    { href: '/admin/applications/disbursed', label: 'Disbursed', count: appCounts.disbursed },
-                    { href: '/admin/applications/reapply-3-days', label: 'Reapply After 3 Days', count: appCounts.reapply_3_days },
-                  ].map((sub) => (
-                    <Link
-                      key={sub.label}
-                      href={sub.href}
-                      onClick={() => { if (typeof window !== 'undefined' && window.innerWidth < 1024) setIsSidebarOpen(false); }}
-                      className={`w-full text-left py-1.5 px-2.5 rounded-lg flex items-center justify-between font-medium transition-colors ${
-                        pathname === sub.href ? 'bg-slate-800 text-blue-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-                      }`}
-                    >
-                      <span>{sub.label}</span>
-                      <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
-                        {sub.count}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
 
             {/* Distinct Page Route Sidebar Items */}
             {[
-              { href: '/admin/urgent-loans', label: 'Urgent Loans', icon: Zap, count: urgentCount },
+              { href: '/admin/urgent-loans', label: 'Urgent Loans', icon: Zap },
               { href: '/admin/partners', label: 'Partner / Lender', icon: Building2 },
               { href: '/admin/disbursement', label: 'Disbursement', icon: CreditCard },
-              { href: '/admin/users', label: 'User Management', icon: Users, count: userCount },
+              { href: '/admin/users', label: 'User Management', icon: Users },
               { href: '/admin/reports', label: 'Reports & Analytics', icon: Sliders },
               { href: '/admin/communication', label: 'Communication', icon: MessageSquare },
               { href: '/admin/remarks', label: 'Remarks & Templates', icon: CheckCheck },

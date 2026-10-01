@@ -1072,11 +1072,79 @@ export default function VirtualLoanApplyPage() {
               </div>
             </div>
 
+            {/* LIVE WALLET CARD: AMOUNT ADDED TO WALLET */}
+            <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 shadow-2xl border border-slate-800 space-y-3.5 relative overflow-hidden">
+              {/* Glow accents */}
+              <div className="absolute -right-10 -top-10 w-36 h-36 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -left-10 -bottom-10 w-36 h-36 bg-blue-500/15 rounded-full blur-2xl pointer-events-none" />
+
+              {/* Card Top Row */}
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500 text-slate-950 flex items-center justify-center font-black text-xs shadow-md">
+                    OS
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-300 block leading-tight">
+                      OPEN SCORE SMART VALUE
+                    </span>
+                    <span className="text-[9px] font-bold text-amber-300 tracking-widest block">
+                      PREMIUM METAL CARD ·))
+                    </span>
+                  </div>
+                </div>
+                <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-[10px] font-black rounded-full uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  Credited to Wallet
+                </span>
+              </div>
+
+              {/* Card Balance */}
+              <div className="relative z-10 pt-0.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                  Available Wallet Limit
+                </span>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  <h3 className="text-3xl font-black text-white tracking-tight font-mono">
+                    ₹ {selectedAmount.toLocaleString('en-IN')}
+                  </h3>
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-700/50">
+                    Pre-Allocated Limit
+                  </span>
+                </div>
+              </div>
+
+              {/* Card Bottom Meta */}
+              <div className="flex items-end justify-between text-xs text-slate-400 border-t border-white/10 pt-2.5 relative z-10">
+                <div>
+                  <span className="text-[9px] uppercase tracking-wider text-slate-500 block font-semibold">Card Holder</span>
+                  <span className="font-black text-white uppercase tracking-wide text-xs">
+                    {fullName || 'OPENSCORE USER'}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] uppercase tracking-wider text-slate-500 block font-semibold">Card Number</span>
+                  <span className="font-mono text-slate-300 font-bold text-xs">
+                    •••• •••• •••• {mobileNumber ? mobileNumber.slice(-4) : '4734'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer Pill */}
+              <div className="bg-white/5 -mx-5 -mb-5 px-5 py-2.5 border-t border-white/10 flex items-center justify-between text-[10px] text-slate-300">
+                <span className="flex items-center gap-1.5 font-bold text-emerald-300">
+                  <Wallet className="w-3.5 h-3.5 text-emerald-400" />
+                  ₹{selectedAmount.toLocaleString('en-IN')} Added to Wallet
+                </span>
+                <span className="font-semibold text-slate-400">0% Interest Credit</span>
+              </div>
+            </div>
+
             {/* CALLOUT INFO */}
-            <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-2xl flex items-start gap-3 text-blue-900 shadow-2xs">
-              <Sparkles className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+            <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-2xl flex items-start gap-3 text-emerald-900 shadow-2xs">
+              <Sparkles className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
               <p className="text-xs font-bold leading-relaxed">
-                Your pre-approved sanction letter has been generated. Unlock your credit limit now to review your official letter and complete nominal activation.
+                Your pre-approved limit of <strong>₹{selectedAmount.toLocaleString('en-IN')}</strong> has been credited to your OpenScore wallet. Complete nominal authorization below to activate your limit.
               </p>
             </div>
 
@@ -1291,28 +1359,36 @@ export default function VirtualLoanApplyPage() {
               </div>
 
               {(() => {
-                const loginFee = 500;
-                const docFee = 200;
-                const riskFee = Math.max(0, currentFee - 700);
+                const loginFee = feeConfig?.virtual_loan_login_fee ?? 100;
+                const docFee = feeConfig?.virtual_loan_doc_fee ?? 100;
+                const riskFee = feeConfig?.virtual_loan_verification_fee ?? 99;
                 return (
                   <div className="space-y-2.5 text-xs">
                     <div className="flex items-center justify-between text-slate-600 font-medium">
                       <span>1. Application Login &amp; Portal Fee</span>
-                      <span className="font-bold text-slate-900">₹{loginFee.toLocaleString('en-IN')}.00</span>
+                      <span className="font-bold text-slate-900">₹{Number(loginFee).toLocaleString('en-IN')}.00</span>
                     </div>
                     <div className="flex items-center justify-between text-slate-600 font-medium">
                       <span>2. KYC &amp; Documentation Processing</span>
-                      <span className="font-bold text-slate-900">₹{docFee.toLocaleString('en-IN')}.00</span>
+                      <span className="font-bold text-slate-900">₹{Number(docFee).toLocaleString('en-IN')}.00</span>
                     </div>
                     <div className="flex items-center justify-between text-slate-600 font-medium">
                       <span>3. Express Sanction &amp; Risk Check</span>
-                      <span className="font-bold text-slate-900">₹{riskFee.toLocaleString('en-IN')}.00</span>
+                      <span className="font-bold text-slate-900">₹{Number(riskFee).toLocaleString('en-IN')}.00</span>
                     </div>
+
+                    {/* Additional Taxes & Fees */}
+                    {(feeConfig?.virtual_loan_additional_fees || []).map((fee: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between text-slate-600 font-medium">
+                        <span>{3 + idx + 1}. {fee.label}</span>
+                        <span className="font-bold text-slate-900">₹{Number(fee.amount || 0).toLocaleString('en-IN')}.00</span>
+                      </div>
+                    ))}
 
                     <div className="pt-2.5 border-t border-dashed border-slate-200 flex items-center justify-between text-sm font-black text-blue-950">
                       <span>Total Payable Amount</span>
                       <span className="text-lg text-blue-700 font-mono font-black">
-                        ₹{currentFee.toLocaleString('en-IN')}.00
+                        ₹{Number(currentFee).toLocaleString('en-IN')}.00
                       </span>
                     </div>
                   </div>
@@ -1590,17 +1666,17 @@ export default function VirtualLoanApplyPage() {
                 Fee Paid: ₹ {currentFee.toLocaleString('en-IN')}
               </h3>
 
-              {autoVerified ? (
+              {autoVerified || appStatus === 'approved' || appStatus === 'sanction_approved' ? (
                 <div className="space-y-2 pt-2">
                   <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl text-emerald-900 text-xs font-bold flex items-start gap-2">
                     <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <p className="text-left">
-                      <strong>Auto Verification ON:</strong> System automatically verified and activated your loan! ₹ {selectedAmount.toLocaleString('en-IN')} limit is now credited to your wallet.
+                      <strong>Credit Limit Approved &amp; Activated:</strong> ₹ {selectedAmount.toLocaleString('en-IN')} limit is now approved and activated in your wallet!
                     </p>
                   </div>
                   <button
                     onClick={() => router.push('/loan/virtual-loan/dashboard')}
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md"
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md cursor-pointer"
                   >
                     Go to Virtual Loan Dashboard →
                   </button>
@@ -1610,7 +1686,7 @@ export default function VirtualLoanApplyPage() {
                   <div className="bg-amber-50 border border-amber-200 p-3 rounded-2xl text-amber-900 text-xs font-bold flex items-start gap-2">
                     <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <p className="text-left">
-                      <strong>Pending Admin Verification (Auto Verify OFF):</strong> Your fee payment is recorded. Admin will manually verify your documents to activate the usable wallet balance.
+                      <strong>Application Submitted:</strong> Your fee payment is recorded. Admin will verify your verification details to activate the usable wallet balance.
                     </p>
                   </div>
                   <button
@@ -1618,9 +1694,9 @@ export default function VirtualLoanApplyPage() {
                       setShowPaymentSuccessModal(false);
                       router.push('/loan/virtual-loan/dashboard');
                     }}
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-md"
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-md cursor-pointer"
                   >
-                    View Application Status →
+                    View Application Dashboard →
                   </button>
                 </div>
               )}

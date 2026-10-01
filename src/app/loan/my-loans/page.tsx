@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 
 import { useDebounce } from '@/hooks/useDebounce';
+import { getUserMobileQuery } from '@/lib/loan-resume';
 
 export default function MyLoansPage() {
   const router = useRouter();
@@ -35,9 +36,10 @@ export default function MyLoansPage() {
 
   const fetchApplications = () => {
     setLoading(true);
-    apiRequest('/loan/applications')
+    const mobileQuery = getUserMobileQuery();
+    apiRequest(`/loan/applications${mobileQuery}`)
       .then((res) => {
-        if (res.data && Array.isArray(res.data)) {
+        if (res && res.data && Array.isArray(res.data)) {
           setLoans(res.data);
         }
       })

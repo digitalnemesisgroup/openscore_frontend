@@ -6,9 +6,19 @@ import { Info, Plus, Shield, Star, Lock } from 'lucide-react';
 interface TopValueCardsProps {
   onOpenEliteValue: () => void;
   onOpenVaultCard: () => void;
+  eliteValue?: number;
+  vaultValue?: number;
 }
 
-export default function TopValueCards({ onOpenEliteValue, onOpenVaultCard }: TopValueCardsProps) {
+export default function TopValueCards({
+  onOpenEliteValue,
+  onOpenVaultCard,
+  eliteValue = 30000,
+  vaultValue = 30000,
+}: TopValueCardsProps) {
+  const displayElite = Number(eliteValue) > 0 ? Number(eliteValue) : 30000;
+  const displayVault = Number(vaultValue) > 0 ? Number(vaultValue) : (Number(eliteValue) > 0 ? Number(eliteValue) : 30000);
+
   return (
     <div className="grid grid-cols-2 gap-3">
       {/* Card 1: ELITE VALUE */}
@@ -19,7 +29,9 @@ export default function TopValueCards({ onOpenEliteValue, onOpenVaultCard }: Top
               ELITE VALUE <Info className="w-3 h-3 text-purple-300 cursor-pointer" onClick={onOpenEliteValue} />
             </span>
           </div>
-          <h2 className="text-2xl font-black tracking-tight my-1">0</h2>
+          <h2 className="text-2xl font-black tracking-tight my-1">
+            ₹{displayElite.toLocaleString('en-IN')}
+          </h2>
           <p className="text-[9px] font-bold tracking-widest text-purple-200 uppercase">
             TOTAL VALUE
           </p>
@@ -59,7 +71,9 @@ export default function TopValueCards({ onOpenEliteValue, onOpenVaultCard }: Top
 
         <div className="my-1">
           <p className="text-[9px] font-semibold text-slate-400 uppercase">ASSET VALUE</p>
-          <p className="text-xl font-black text-slate-900">0</p>
+          <p className="text-xl font-black text-slate-900">
+            ₹{displayVault.toLocaleString('en-IN')}
+          </p>
         </div>
 
         <div className="absolute right-2 bottom-2 w-14 h-14 pointer-events-none">
@@ -71,4 +85,5 @@ export default function TopValueCards({ onOpenEliteValue, onOpenVaultCard }: Top
     </div>
   );
 }
+
 

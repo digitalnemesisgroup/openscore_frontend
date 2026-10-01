@@ -89,8 +89,12 @@ export default function AdminSettingsPage() {
     construction_loan_high_cibil_fee_type: 'fixed',
     construction_loan_high_cibil_fee_value: 499,
     // Virtual Card / Loan / Voucher - Single Fee
-    virtual_loan_fee_type: 'fixed',
-    virtual_loan_fee_value: 299,
+    virtual_loan_login_fee: 100,
+    virtual_loan_verification_fee: 99,
+    // Additional Dynamic Taxes/Fees
+    cash_loan_additional_fees: [] as { label: string; amount: number }[],
+    construction_loan_additional_fees: [] as { label: string; amount: number }[],
+    virtual_loan_additional_fees: [] as { label: string; amount: number }[],
   });
   const [savingFeeConfig, setSavingFeeConfig] = useState<boolean>(false);
 
@@ -159,8 +163,13 @@ export default function AdminSettingsPage() {
           construction_loan_high_cibil_fee_type: res.data.construction_loan_high_cibil_fee_type || res.data.construction_loan_fee_type || 'fixed',
           construction_loan_high_cibil_fee_value: Number(res.data.construction_loan_high_cibil_fee_value ?? 499),
           // Virtual Loan
-          virtual_loan_fee_type: res.data.virtual_loan_fee_type || 'fixed',
-          virtual_loan_fee_value: Number(res.data.virtual_loan_fee_value ?? 299),
+          virtual_loan_login_fee: Number(res.data.virtual_loan_login_fee ?? 100),
+          virtual_loan_doc_fee: Number(res.data.virtual_loan_doc_fee ?? 100),
+          virtual_loan_verification_fee: Number(res.data.virtual_loan_verification_fee ?? 99),
+          // Additional Dynamic Taxes/Fees
+          cash_loan_additional_fees: Array.isArray(res.data.cash_loan_additional_fees) ? res.data.cash_loan_additional_fees : [],
+          construction_loan_additional_fees: Array.isArray(res.data.construction_loan_additional_fees) ? res.data.construction_loan_additional_fees : [],
+          virtual_loan_additional_fees: Array.isArray(res.data.virtual_loan_additional_fees) ? res.data.virtual_loan_additional_fees : [],
         });
       }
     } catch (err) {}
@@ -634,7 +643,7 @@ export default function AdminSettingsPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Cash Loan / Elite Loan Breakdown */}
               <div className="bg-white border-2 border-purple-300/80 p-4 rounded-2xl space-y-3.5 shadow-sm">
                 <div className="flex items-center justify-between pb-2 border-b border-purple-100">
@@ -644,7 +653,7 @@ export default function AdminSettingsPage() {
                   </span>
                   <div className="flex items-center gap-1 bg-purple-100 text-purple-900 px-2.5 py-0.5 rounded-full text-xs font-black">
                     <span>Total:</span>
-                    <span>₹{((feeConfig.cash_loan_login_fee || 0) + (feeConfig.cash_loan_doc_fee || 0) + (feeConfig.cash_loan_verification_fee || 0)).toLocaleString('en-IN')}</span>
+                    <span>₹{((feeConfig.cash_loan_login_fee || 0) + (feeConfig.cash_loan_doc_fee || 0) + (feeConfig.cash_loan_verification_fee || 0) + (feeConfig.cash_loan_additional_fees || []).reduce((acc: number, f: any) => acc + (f.amount || 0), 0)).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
@@ -697,6 +706,64 @@ export default function AdminSettingsPage() {
                     <p className="text-[9px] text-slate-500 font-medium">Sanction &amp; risk check</p>
                   </div>
                 </div>
+
+                {/* Additional Taxes/Fees */}
+                <div className="pt-3 border-t border-purple-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black uppercase text-purple-900 tracking-wider">Additional Taxes &amp; Fees</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = feeConfig.cash_loan_additional_fees || [];
+                        setFeeConfig({ ...feeConfig, cash_loan_additional_fees: [...current, { label: '', amount: 0 }] });
+                      }}
+                      className="flex items-center gap-1 text-[9px] bg-purple-100 text-purple-700 font-bold px-2 py-1 rounded-md hover:bg-purple-200 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" /> Add Fee
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {(feeConfig.cash_loan_additional_fees || []).map((fee: any, idx: number) => (
+                      <div key={idx} className="flex gap-2 items-center bg-purple-50/40 p-2 rounded-xl border border-purple-100 shadow-2xs">
+                        <input
+                          type="text"
+                          placeholder="Name (e.g. GST 18%)"
+                          value={fee.label}
+                          onChange={(e) => {
+                            const newFees = [...(feeConfig.cash_loan_additional_fees || [])];
+                            newFees[idx].label = e.target.value;
+                            setFeeConfig({ ...feeConfig, cash_loan_additional_fees: newFees });
+                          }}
+                          className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold text-slate-900 focus:outline-none"
+                        />
+                        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5">
+                          <span className="text-[10px] font-bold text-purple-700">₹</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={fee.amount}
+                            onChange={(e) => {
+                              const newFees = [...(feeConfig.cash_loan_additional_fees || [])];
+                              newFees[idx].amount = parseFloat(e.target.value) || 0;
+                              setFeeConfig({ ...feeConfig, cash_loan_additional_fees: newFees });
+                            }}
+                            className="w-14 sm:w-16 bg-transparent text-[10px] font-mono font-black text-slate-900 focus:outline-none"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newFees = (feeConfig.cash_loan_additional_fees || []).filter((_: any, i: number) => i !== idx);
+                            setFeeConfig({ ...feeConfig, cash_loan_additional_fees: newFees });
+                          }}
+                          className="text-red-400 hover:text-red-600 p-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Construction Loan / Urgent Construction Breakdown */}
@@ -708,7 +775,7 @@ export default function AdminSettingsPage() {
                   </span>
                   <div className="flex items-center gap-1 bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full text-xs font-black">
                     <span>Total:</span>
-                    <span>₹{((feeConfig.construction_loan_login_fee || 0) + (feeConfig.construction_loan_doc_fee || 0) + (feeConfig.construction_loan_site_verification_fee || 0)).toLocaleString('en-IN')}</span>
+                    <span>₹{((feeConfig.construction_loan_login_fee || 0) + (feeConfig.construction_loan_doc_fee || 0) + (feeConfig.construction_loan_site_verification_fee || 0) + (feeConfig.construction_loan_additional_fees || []).reduce((acc: number, f: any) => acc + (f.amount || 0), 0)).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
@@ -761,401 +828,184 @@ export default function AdminSettingsPage() {
                     <p className="text-[9px] text-slate-500 font-medium">Technical site inspection</p>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Fee Calculation Structure Matrix */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-1.5 text-xs font-black text-slate-900">
-              <Calculator className="w-4 h-4 text-emerald-600" />
-              <span>Loan Processing Fee Model (Tiered: Without CIBIL, Low CIBIL &amp; High CIBIL)</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* 1. Cash Loan Fee (3 Tiers) */}
-              <div className="bg-white border border-purple-200 p-4 rounded-2xl space-y-3.5 shadow-2xs">
-                <div className="flex items-center justify-between pb-2 border-b border-purple-100">
-                  <span className="text-xs font-black text-purple-950 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-purple-600"></span>
-                    Cash Loan (3 Tiers)
-                  </span>
-                  <span className="text-[10px] bg-purple-50 text-purple-700 font-extrabold px-2 py-0.5 rounded-md border border-purple-200">
-                    Personal
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {/* Tier 1: Without CIBIL */}
-                  <div className="bg-purple-50/40 p-2.5 rounded-xl border border-purple-100 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-800">
-                        1. Without CIBIL Fee:
-                      </label>
-                      <div className="flex bg-white p-0.5 rounded-md border border-slate-200 text-[9px] font-bold">
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, cash_loan_without_cibil_fee_type: 'fixed' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.cash_loan_without_cibil_fee_type === 'fixed'
-                              ? 'bg-purple-700 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          Fixed (₹)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, cash_loan_without_cibil_fee_type: 'percentage' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.cash_loan_without_cibil_fee_type === 'percentage'
-                              ? 'bg-purple-700 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          % Rate
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
-                      <span className="text-xs font-bold text-purple-700">
-                        {feeConfig.cash_loan_without_cibil_fee_type === 'percentage' ? '%' : '₹'}
-                      </span>
-                      <input
-                        type="number"
-                        step={feeConfig.cash_loan_without_cibil_fee_type === 'percentage' ? '0.1' : '1'}
-                        min="0"
-                        value={feeConfig.cash_loan_without_cibil_fee_value}
-                        onChange={(e) =>
-                          setFeeConfig({ ...feeConfig, cash_loan_without_cibil_fee_value: parseFloat(e.target.value) || 0 })
-                        }
-                        className="w-full bg-transparent font-mono font-bold text-xs text-slate-900 focus:outline-none"
-                      />
-                    </div>
+                {/* Additional Taxes/Fees */}
+                <div className="pt-3 border-t border-emerald-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black uppercase text-emerald-900 tracking-wider">Additional Taxes &amp; Fees</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = feeConfig.construction_loan_additional_fees || [];
+                        setFeeConfig({ ...feeConfig, construction_loan_additional_fees: [...current, { label: '', amount: 0 }] });
+                      }}
+                      className="flex items-center gap-1 text-[9px] bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded-md hover:bg-emerald-200 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" /> Add Fee
+                    </button>
                   </div>
-
-                  {/* Tier 2: Low CIBIL */}
-                  <div className="bg-purple-50/40 p-2.5 rounded-xl border border-purple-100 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-800">
-                        2. Low CIBIL Fee:
-                      </label>
-                      <div className="flex bg-white p-0.5 rounded-md border border-slate-200 text-[9px] font-bold">
+                  <div className="space-y-2">
+                    {(feeConfig.construction_loan_additional_fees || []).map((fee: any, idx: number) => (
+                      <div key={idx} className="flex gap-2 items-center bg-emerald-50/40 p-2 rounded-xl border border-emerald-100 shadow-2xs">
+                        <input
+                          type="text"
+                          placeholder="Name (e.g. GST 18%)"
+                          value={fee.label}
+                          onChange={(e) => {
+                            const newFees = [...(feeConfig.construction_loan_additional_fees || [])];
+                            newFees[idx].label = e.target.value;
+                            setFeeConfig({ ...feeConfig, construction_loan_additional_fees: newFees });
+                          }}
+                          className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold text-slate-900 focus:outline-none"
+                        />
+                        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5">
+                          <span className="text-[10px] font-bold text-emerald-700">₹</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={fee.amount}
+                            onChange={(e) => {
+                              const newFees = [...(feeConfig.construction_loan_additional_fees || [])];
+                              newFees[idx].amount = parseFloat(e.target.value) || 0;
+                              setFeeConfig({ ...feeConfig, construction_loan_additional_fees: newFees });
+                            }}
+                            className="w-14 sm:w-16 bg-transparent text-[10px] font-mono font-black text-slate-900 focus:outline-none"
+                          />
+                        </div>
                         <button
                           type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, cash_loan_low_cibil_fee_type: 'fixed' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.cash_loan_low_cibil_fee_type === 'fixed'
-                              ? 'bg-purple-700 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
+                          onClick={() => {
+                            const newFees = (feeConfig.construction_loan_additional_fees || []).filter((_: any, i: number) => i !== idx);
+                            setFeeConfig({ ...feeConfig, construction_loan_additional_fees: newFees });
+                          }}
+                          className="text-red-400 hover:text-red-600 p-1"
                         >
-                          Fixed (₹)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, cash_loan_low_cibil_fee_type: 'percentage' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.cash_loan_low_cibil_fee_type === 'percentage'
-                              ? 'bg-purple-700 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          % Rate
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
-                      <span className="text-xs font-bold text-purple-700">
-                        {feeConfig.cash_loan_low_cibil_fee_type === 'percentage' ? '%' : '₹'}
-                      </span>
-                      <input
-                        type="number"
-                        step={feeConfig.cash_loan_low_cibil_fee_type === 'percentage' ? '0.1' : '1'}
-                        min="0"
-                        value={feeConfig.cash_loan_low_cibil_fee_value}
-                        onChange={(e) =>
-                          setFeeConfig({ ...feeConfig, cash_loan_low_cibil_fee_value: parseFloat(e.target.value) || 0 })
-                        }
-                        className="w-full bg-transparent font-mono font-bold text-xs text-slate-900 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Tier 3: High CIBIL (>700) */}
-                  <div className="bg-purple-50/40 p-2.5 rounded-xl border border-purple-100 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-800">
-                        3. High CIBIL (&gt;700) Fee:
-                      </label>
-                      <div className="flex bg-white p-0.5 rounded-md border border-slate-200 text-[9px] font-bold">
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, cash_loan_high_cibil_fee_type: 'fixed' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.cash_loan_high_cibil_fee_type === 'fixed'
-                              ? 'bg-purple-700 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          Fixed (₹)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, cash_loan_high_cibil_fee_type: 'percentage' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.cash_loan_high_cibil_fee_type === 'percentage'
-                              ? 'bg-purple-700 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          % Rate
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
-                      <span className="text-xs font-bold text-purple-700">
-                        {feeConfig.cash_loan_high_cibil_fee_type === 'percentage' ? '%' : '₹'}
-                      </span>
-                      <input
-                        type="number"
-                        step={feeConfig.cash_loan_high_cibil_fee_type === 'percentage' ? '0.1' : '1'}
-                        min="0"
-                        value={feeConfig.cash_loan_high_cibil_fee_value}
-                        onChange={(e) =>
-                          setFeeConfig({ ...feeConfig, cash_loan_high_cibil_fee_value: parseFloat(e.target.value) || 0 })
-                        }
-                        className="w-full bg-transparent font-mono font-bold text-xs text-slate-900 focus:outline-none"
-                      />
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* 2. Construction Loan Fee (3 Tiers) */}
-              <div className="bg-white border border-emerald-200 p-4 rounded-2xl space-y-3.5 shadow-2xs">
-                <div className="flex items-center justify-between pb-2 border-b border-emerald-100">
-                  <span className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-                    Construction Loan (3 Tiers)
-                  </span>
-                  <span className="text-[10px] bg-emerald-50 text-emerald-700 font-extrabold px-2 py-0.5 rounded-md border border-emerald-200">
-                    Project
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {/* Tier 1: Without CIBIL */}
-                  <div className="bg-emerald-50/40 p-2.5 rounded-xl border border-emerald-100 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-800">
-                        1. Without CIBIL Fee:
-                      </label>
-                      <div className="flex bg-white p-0.5 rounded-md border border-slate-200 text-[9px] font-bold">
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, construction_loan_without_cibil_fee_type: 'fixed' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.construction_loan_without_cibil_fee_type === 'fixed'
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          Fixed (₹)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, construction_loan_without_cibil_fee_type: 'percentage' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.construction_loan_without_cibil_fee_type === 'percentage'
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          % Rate
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
-                      <span className="text-xs font-bold text-emerald-700">
-                        {feeConfig.construction_loan_without_cibil_fee_type === 'percentage' ? '%' : '₹'}
-                      </span>
-                      <input
-                        type="number"
-                        step={feeConfig.construction_loan_without_cibil_fee_type === 'percentage' ? '0.1' : '1'}
-                        min="0"
-                        value={feeConfig.construction_loan_without_cibil_fee_value}
-                        onChange={(e) =>
-                          setFeeConfig({ ...feeConfig, construction_loan_without_cibil_fee_value: parseFloat(e.target.value) || 0 })
-                        }
-                        className="w-full bg-transparent font-mono font-bold text-xs text-slate-900 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Tier 2: Low CIBIL */}
-                  <div className="bg-emerald-50/40 p-2.5 rounded-xl border border-emerald-100 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-800">
-                        2. Low CIBIL Fee:
-                      </label>
-                      <div className="flex bg-white p-0.5 rounded-md border border-slate-200 text-[9px] font-bold">
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, construction_loan_low_cibil_fee_type: 'fixed' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.construction_loan_low_cibil_fee_type === 'fixed'
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          Fixed (₹)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, construction_loan_low_cibil_fee_type: 'percentage' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.construction_loan_low_cibil_fee_type === 'percentage'
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          % Rate
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
-                      <span className="text-xs font-bold text-emerald-700">
-                        {feeConfig.construction_loan_low_cibil_fee_type === 'percentage' ? '%' : '₹'}
-                      </span>
-                      <input
-                        type="number"
-                        step={feeConfig.construction_loan_low_cibil_fee_type === 'percentage' ? '0.1' : '1'}
-                        min="0"
-                        value={feeConfig.construction_loan_low_cibil_fee_value}
-                        onChange={(e) =>
-                          setFeeConfig({ ...feeConfig, construction_loan_low_cibil_fee_value: parseFloat(e.target.value) || 0 })
-                        }
-                        className="w-full bg-transparent font-mono font-bold text-xs text-slate-900 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Tier 3: High CIBIL (>700) */}
-                  <div className="bg-emerald-50/40 p-2.5 rounded-xl border border-emerald-100 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-800">
-                        3. High CIBIL (&gt;700) Fee:
-                      </label>
-                      <div className="flex bg-white p-0.5 rounded-md border border-slate-200 text-[9px] font-bold">
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, construction_loan_high_cibil_fee_type: 'fixed' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.construction_loan_high_cibil_fee_type === 'fixed'
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          Fixed (₹)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, construction_loan_high_cibil_fee_type: 'percentage' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.construction_loan_high_cibil_fee_type === 'percentage'
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          % Rate
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
-                      <span className="text-xs font-bold text-emerald-700">
-                        {feeConfig.construction_loan_high_cibil_fee_type === 'percentage' ? '%' : '₹'}
-                      </span>
-                      <input
-                        type="number"
-                        step={feeConfig.construction_loan_high_cibil_fee_type === 'percentage' ? '0.1' : '1'}
-                        min="0"
-                        value={feeConfig.construction_loan_high_cibil_fee_value}
-                        onChange={(e) =>
-                          setFeeConfig({ ...feeConfig, construction_loan_high_cibil_fee_value: parseFloat(e.target.value) || 0 })
-                        }
-                        className="w-full bg-transparent font-mono font-bold text-xs text-slate-900 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. Virtual Card / Voucher / Loan Fee (Single Fee) */}
-              <div className="bg-white border border-blue-200 p-4 rounded-2xl space-y-3.5 shadow-2xs">
+              {/* Virtual Card / Voucher / Loan Fee */}
+              <div className="bg-white border-2 border-blue-300/80 p-4 rounded-2xl space-y-3.5 shadow-sm">
                 <div className="flex items-center justify-between pb-2 border-b border-blue-100">
                   <span className="text-xs font-black text-blue-950 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-                    Virtual Card / Loan / Voucher
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
+                    💳 Virtual Loan Fee Breakdown
                   </span>
-                  <span className="text-[10px] bg-blue-50 text-blue-700 font-extrabold px-2 py-0.5 rounded-md border border-blue-200">
-                    Single Fee
-                  </span>
+                  <div className="flex items-center gap-1 bg-blue-100 text-blue-900 px-2.5 py-0.5 rounded-full text-xs font-black">
+                    <span>Total:</span>
+                    <span>₹{((feeConfig.virtual_loan_login_fee || 0) + (feeConfig.virtual_loan_doc_fee || 0) + (feeConfig.virtual_loan_verification_fee || 0) + (feeConfig.virtual_loan_additional_fees || []).reduce((acc: number, f: any) => acc + (f.amount || 0), 0)).toLocaleString('en-IN')}</span>
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="bg-blue-50/40 p-3 rounded-xl border border-blue-100 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-slate-800">
-                        Activation &amp; Issuance Fee:
-                      </label>
-                      <div className="flex bg-white p-0.5 rounded-md border border-slate-200 text-[9px] font-bold">
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, virtual_loan_fee_type: 'fixed' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.virtual_loan_fee_type === 'fixed'
-                              ? 'bg-blue-600 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          Fixed (₹)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFeeConfig({ ...feeConfig, virtual_loan_fee_type: 'percentage' })}
-                          className={`px-1.5 py-0.5 rounded transition-all ${
-                            feeConfig.virtual_loan_fee_type === 'percentage'
-                              ? 'bg-blue-600 text-white shadow-xs'
-                              : 'text-slate-600 hover:text-slate-900'
-                          }`}
-                        >
-                          % Rate
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
-                      <span className="text-xs font-bold text-blue-700">
-                        {feeConfig.virtual_loan_fee_type === 'percentage' ? '%' : '₹'}
-                      </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Login Fee */}
+                  <div className="bg-blue-50/60 p-2.5 rounded-xl border border-blue-100 space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-blue-900">1. Login Fee (₹)</label>
+                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 shadow-2xs">
+                      <span className="text-xs font-bold text-blue-700">₹</span>
                       <input
                         type="number"
-                        step={feeConfig.virtual_loan_fee_type === 'percentage' ? '0.1' : '1'}
                         min="0"
-                        value={feeConfig.virtual_loan_fee_value}
-                        onChange={(e) =>
-                          setFeeConfig({ ...feeConfig, virtual_loan_fee_value: parseFloat(e.target.value) || 0 })
-                        }
-                        className="w-full bg-transparent font-mono font-bold text-xs text-slate-900 focus:outline-none"
+                        value={feeConfig.virtual_loan_login_fee}
+                        onChange={(e) => setFeeConfig({ ...feeConfig, virtual_loan_login_fee: parseFloat(e.target.value) || 0 })}
+                        className="w-full bg-transparent font-mono font-black text-xs text-slate-900 focus:outline-none"
                       />
                     </div>
+                    <p className="text-[9px] text-slate-500 font-medium">Portal registration</p>
+                  </div>
 
-                    <p className="text-[10px] text-slate-500 pt-1">
-                      {feeConfig.virtual_loan_fee_type === 'percentage'
-                        ? `Calculated as ${feeConfig.virtual_loan_fee_value}% of approved wallet limit.`
-                        : `Flat one-time fee ₹${feeConfig.virtual_loan_fee_value} charged on card issuance.`}
-                    </p>
+                  {/* Documentation Fee */}
+                  <div className="bg-blue-50/60 p-2.5 rounded-xl border border-blue-100 space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-blue-900">2. Document Fee (₹)</label>
+                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 shadow-2xs">
+                      <span className="text-xs font-bold text-blue-700">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={feeConfig.virtual_loan_doc_fee}
+                        onChange={(e) => setFeeConfig({ ...feeConfig, virtual_loan_doc_fee: parseFloat(e.target.value) || 0 })}
+                        className="w-full bg-transparent font-mono font-black text-xs text-slate-900 focus:outline-none"
+                      />
+                    </div>
+                    <p className="text-[9px] text-slate-500 font-medium">Card Issuance</p>
+                  </div>
+
+                  {/* Verification Fee */}
+                  <div className="bg-blue-50/60 p-2.5 rounded-xl border border-blue-100 space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-blue-900">3. Verif. Fee (₹)</label>
+                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 shadow-2xs">
+                      <span className="text-xs font-bold text-blue-700">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={feeConfig.virtual_loan_verification_fee}
+                        onChange={(e) => setFeeConfig({ ...feeConfig, virtual_loan_verification_fee: parseFloat(e.target.value) || 0 })}
+                        className="w-full bg-transparent font-mono font-black text-xs text-slate-900 focus:outline-none"
+                      />
+                    </div>
+                    <p className="text-[9px] text-slate-500 font-medium">Account setup</p>
+                  </div>
+                </div>
+
+                {/* Additional Taxes/Fees */}
+                <div className="pt-3 border-t border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black uppercase text-blue-900 tracking-wider">Additional Taxes &amp; Fees</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = feeConfig.virtual_loan_additional_fees || [];
+                        setFeeConfig({ ...feeConfig, virtual_loan_additional_fees: [...current, { label: '', amount: 0 }] });
+                      }}
+                      className="flex items-center gap-1 text-[9px] bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded-md hover:bg-blue-200 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" /> Add Fee
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {(feeConfig.virtual_loan_additional_fees || []).map((fee: any, idx: number) => (
+                      <div key={idx} className="flex gap-2 items-center bg-blue-50/40 p-2 rounded-xl border border-blue-100 shadow-2xs">
+                        <input
+                          type="text"
+                          placeholder="Name (e.g. GST 18%)"
+                          value={fee.label}
+                          onChange={(e) => {
+                            const newFees = [...(feeConfig.virtual_loan_additional_fees || [])];
+                            newFees[idx].label = e.target.value;
+                            setFeeConfig({ ...feeConfig, virtual_loan_additional_fees: newFees });
+                          }}
+                          className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] font-bold text-slate-900 focus:outline-none"
+                        />
+                        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5">
+                          <span className="text-[10px] font-bold text-blue-700">₹</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={fee.amount}
+                            onChange={(e) => {
+                              const newFees = [...(feeConfig.virtual_loan_additional_fees || [])];
+                              newFees[idx].amount = parseFloat(e.target.value) || 0;
+                              setFeeConfig({ ...feeConfig, virtual_loan_additional_fees: newFees });
+                            }}
+                            className="w-14 sm:w-16 bg-transparent text-[10px] font-mono font-black text-slate-900 focus:outline-none"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newFees = (feeConfig.virtual_loan_additional_fees || []).filter((_: any, i: number) => i !== idx);
+                            setFeeConfig({ ...feeConfig, virtual_loan_additional_fees: newFees });
+                          }}
+                          className="text-red-400 hover:text-red-600 p-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

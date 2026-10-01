@@ -19,10 +19,12 @@ import {
   LifeBuoy,
   RefreshCw,
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 import { apiRequest } from '@/lib/api';
 
 export default function VirtualLoanDashboardPage() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState<boolean>(true);
   const [dashboardData, setDashboardData] = useState<any>(null);
@@ -44,10 +46,10 @@ export default function VirtualLoanDashboardPage() {
       // Fallback sample data for demo preview
       setDashboardData({
         approved_amount: 30000,
-        used_amount: 8500,
-        available_amount: 21500,
-        todays_repayment: 1000,
-        next_due_date: '24 Sep 2025',
+        used_amount: 0,
+        available_amount: 30000,
+        todays_repayment: 0,
+        next_due_date: 'Flexible 90 Days',
         loan_status: 'active',
         is_active: true,
       });
@@ -61,13 +63,14 @@ export default function VirtualLoanDashboardPage() {
   }, []);
 
   const approvedAmt = dashboardData?.approved_amount || 30000;
-  const usedAmt = dashboardData?.used_amount || 8500;
-  const availAmt = dashboardData?.available_amount || 21500;
-  const todaysRepayment = dashboardData?.todays_repayment || 1000;
-  const nextDueDate = dashboardData?.next_due_date || '24 Sep 2025';
+  const usedAmt = dashboardData?.used_amount || 0;
+  const availAmt = dashboardData?.available_amount || 30000;
+  const todaysRepayment = dashboardData?.todays_repayment || 0;
+  const nextDueDate = dashboardData?.next_due_date || 'Flexible 90 Days';
   const isActive = dashboardData?.is_active ?? true;
 
   const usedPercent = Math.min(100, Math.round((usedAmt / approvedAmt) * 100));
+  const displayName = user?.name || 'Avisekh Kumar Tewari';
 
   return (
     <MobileContainer>
@@ -80,7 +83,7 @@ export default function VirtualLoanDashboardPage() {
               VIRTUAL LOAN
             </span>
           </div>
-          <p className="text-xs text-slate-500 font-medium">Hello, Rahul 👋</p>
+          <p className="text-xs text-slate-600 font-bold">Hello, {displayName} 👋</p>
           <p className="text-[11px] text-slate-400 font-medium">Your business growth is our priority</p>
         </div>
 

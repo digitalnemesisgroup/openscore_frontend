@@ -165,7 +165,51 @@ export function getResumeStepDetails(app: LoanAppRecord): ResumeStepInfo {
   const feeStatus = (app.fee_payment_status || app.payment_status || '').toLowerCase();
   const isFeeVerified = feeStatus.includes('verified') || feeStatus.includes('approved') || app.payment_status === 'verified' || app.payment_status === 'approved' || app.payment_status === 'paid';
   const isConstruction = isConstructionApp(app);
+  const isVirtual = isVirtualApp(app);
   const basePath = isConstruction ? '/loan/apply/construction-loan' : '/loan/apply';
+
+  // Virtual Loan Step Resolution
+  if (isVirtual) {
+    const isApproved = status === 'approved' || status === 'sanction_approved' || status === 'disbursed' || isFeeVerified;
+    if (isApproved) {
+      return {
+        stepNumber: 3,
+        stepTitle: 'Virtual Credit Limit Active',
+        progressPercent: 100,
+        routeUrl: '/loan/virtual-loan/dashboard',
+        actionText: 'View Virtual Dashboard →',
+        isCompleted: true,
+      };
+    }
+    if (status === 'documents_submitted' || status === 'under_review' || status === 'fee_payment_pending' || status === 'loan_booked') {
+      return {
+        stepNumber: 3,
+        stepTitle: 'Virtual Loan Fee & Authorization',
+        progressPercent: 65,
+        routeUrl: '/loan/apply/virtual-loan',
+        actionText: 'Continue Application →',
+        isCompleted: false,
+      };
+    }
+    if (status === 'documents_pending') {
+      return {
+        stepNumber: 2,
+        stepTitle: 'KYC & Documents Upload',
+        progressPercent: 35,
+        routeUrl: '/loan/apply/virtual-loan',
+        actionText: 'Continue Application →',
+        isCompleted: false,
+      };
+    }
+    return {
+      stepNumber: 1,
+      stepTitle: 'Virtual Loan Application',
+      progressPercent: 20,
+      routeUrl: '/loan/apply/virtual-loan',
+      actionText: 'Continue Application →',
+      isCompleted: false,
+    };
+  }
 
   if (status === 'disbursed' || disbStatus === 'credited') {
     return {

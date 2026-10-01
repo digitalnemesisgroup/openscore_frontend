@@ -286,6 +286,14 @@ function ElitePaymentContent() {
                   <span className="font-bold text-slate-900">₹{Number(verifFee).toLocaleString('en-IN')}.00</span>
                 </div>
 
+                {/* Additional Taxes & Fees */}
+                {(feeConfig?.cash_loan_additional_fees || []).map((fee: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between text-slate-600 font-medium">
+                    <span>{3 + idx + 1}. {fee.label}</span>
+                    <span className="font-bold text-slate-900">₹{Number(fee.amount || 0).toLocaleString('en-IN')}.00</span>
+                  </div>
+                ))}
+
                 <div className="pt-2.5 border-t border-dashed border-slate-200 flex items-center justify-between text-sm font-black text-purple-950">
                   <span>Total Payable Amount</span>
                   <span className="text-lg text-purple-700 font-mono font-black">

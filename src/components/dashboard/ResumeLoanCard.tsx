@@ -8,6 +8,8 @@ import {
   ResumeStepInfo,
   ActiveLoanItem,
   getResumeStepDetails,
+  isVirtualApp,
+  isConstructionApp,
 } from '@/lib/loan-resume';
 
 interface ResumeLoanCardProps {
@@ -33,7 +35,8 @@ export default function ResumeLoanCard({
 }: ResumeLoanCardProps) {
   const router = useRouter();
 
-  if (loadingApp) {
+  // If loading and no cached application data exists, render skeleton
+  if (loadingApp && !activeApp && !cashApp && !constructionApp && (!activeList || activeList.length === 0)) {
     return (
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm animate-pulse flex items-center justify-between">
         <div className="space-y-2">
@@ -45,56 +48,87 @@ export default function ResumeLoanCard({
     );
   }
 
-  // Check if any active loan exists
-  let hasActiveLoans = false;
-  let activeCount = 0;
+  // Check for active incomplete application
+  const primaryItem = activeList && activeList.length > 0 ? activeList[0] : null;
+  const primaryApp = primaryItem ? primaryItem.app : (cashApp || constructionApp || activeApp);
+  const primaryResume = primaryItem
+    ? primaryItem.resumeInfo
+    : (cashResumeInfo || constructionResumeInfo || (primaryApp ? getResumeStepDetails(primaryApp) : null));
+  const isVirtual = primaryItem ? primaryItem.isVirtual : (primaryApp ? isVirtualApp(primaryApp) : false);
+  const isConst = primaryItem ? primaryItem.isConstruction : (primaryApp ? isConstructionApp(primaryApp) : false);
 
-  if (activeList && activeList.length > 0) {
-    hasActiveLoans = true;
-    activeCount = activeList.length;
-  } else {
-    if (cashApp && !cashResumeInfo?.isCompleted) {
-      hasActiveLoans = true;
-      activeCount++;
-    }
-    if (constructionApp && !constructionResumeInfo?.isCompleted) {
-      hasActiveLoans = true;
-      activeCount++;
-    }
-    if (!hasActiveLoans && activeApp) {
-      const info = getResumeStepDetails(activeApp);
-      if (!info.isCompleted) {
-        hasActiveLoans = true;
-        activeCount = 1;
-      }
-    }
-  }
+  // If there's an active in-progress loan application, render the full Active Loan Card
+  if (primaryApp && primaryResume && !primaryResume.isCompleted) {
+    const categoryTitle = isVirtual ? 'VIRTUAL LOAN' : (isConst ? 'CONSTRUCTION LOAN' : 'CASH LOAN');
+    const loanTitle = isVirtual ? 'Virtual Loan Application' : (isConst ? 'Construction Loan Application' : 'Cash Loan Application');
+    const totalSteps = isVirtual ? 3 : (isConst ? 26 : 26);
+    const loanAmount = primaryApp.approved_amount || primaryApp.selected_amount || primaryApp.required_amount || 30000;
+    const appNo = primaryApp.application_number || `OS${primaryApp.id}`;
 
-  // If no active loan applications
-  if (!hasActiveLoans) {
-    if (hideEmptyBanner) {
-      return null;
-    }
     return (
-      <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white rounded-2xl p-4 shadow-md flex items-center justify-between">
-        <div>
-          <span className="text-[10px] font-bold text-purple-200 uppercase tracking-wider block">
-            INSTANT LOANS AVAILABLE
+      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 shadow-xl border border-slate-800 space-y-4 relative overflow-hidden animate-in fade-in">
+        {/* Glow ambient */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+
+        {/* Top Header */}
+        <div className="flex items-center justify-between text-xs relative z-10">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
+            <span className="font-extrabold uppercase tracking-wider text-blue-300 text-[11px]">
+              📁 Active {categoryTitle}
+            </span>
+          </div>
+          <span className="font-mono text-[10px] font-bold text-slate-400 bg-white/10 px-2 py-0.5 rounded-md">
+            #{appNo}
           </span>
-          <h3 className="text-sm font-black text-white">Cash & Construction Loans up to ₹1 Crore</h3>
-          <p className="text-[11px] text-purple-100 mt-0.5">Instant approval with flexible tenure</p>
         </div>
+
+        {/* Main Info */}
+        <div className="flex items-start justify-between gap-2 relative z-10">
+          <div>
+            <h3 className="text-base font-black text-white tracking-tight">{loanTitle}</h3>
+            <span className="inline-block mt-1 bg-blue-600/30 text-blue-300 border border-blue-500/40 text-[10px] font-black px-2 py-0.5 rounded-md">
+              Step {primaryResume.stepNumber} of {totalSteps}
+            </span>
+          </div>
+
+          <div className="text-right">
+            <span className="text-[10px] text-slate-400 uppercase font-bold block">LOAN VALUE</span>
+            <span className="text-xl font-black text-white tracking-tight">
+              ₹{loanAmount.toLocaleString('en-IN')}
+            </span>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="space-y-1.5 relative z-10">
+          <div className="flex items-center justify-between text-[11px] font-bold text-slate-300">
+            <span className="flex items-center gap-1 text-slate-400">
+              <Sparkles className="w-3 h-3 text-blue-400" /> Progress
+            </span>
+            <span className="font-mono text-blue-400">{primaryResume.progressPercent}%</span>
+          </div>
+          <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+            <div
+              className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-500"
+              style={{ width: `${primaryResume.progressPercent}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Action Button */}
         <button
-          onClick={() => router.push('/loan/apply')}
-          className="bg-white text-purple-700 px-3 py-2 rounded-xl text-xs font-black shadow-sm hover:bg-purple-50 transition-colors shrink-0 cursor-pointer"
+          onClick={() => router.push(primaryResume.routeUrl)}
+          className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer relative z-10"
         >
-          Apply Now →
+          <span>{primaryResume.actionText}</span>
+          <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     );
   }
 
-  // Dedicated Track Loan Status Banner
+  // If no active in-progress loans or loan is completed, show Real-Time Tracker Banner
   return (
     <div
       onClick={() => router.push('/loan/track')}
