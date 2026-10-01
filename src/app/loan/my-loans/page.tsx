@@ -344,24 +344,102 @@ export default function MyLoansPage() {
                     </span>
                   </div>
 
-                  <div className="bg-slate-50 p-3 rounded-2xl grid grid-cols-2 gap-2 text-xs border border-slate-100">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-semibold">Application No.</span>
-                      <span className="font-mono font-black text-slate-900 text-xs">
-                        {item.application_number || item.application_no || `OSL-${item.id}`}
-                      </span>
+                  <div className="bg-slate-50 p-3 rounded-2xl space-y-2 text-xs border border-slate-100">
+                    {/* Row 1: App No + Amount (all types) */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-semibold">Application No.</span>
+                        <span className="font-mono font-black text-slate-900 text-[11px]">
+                          {item.application_number || item.application_no || `OSL-${item.id}`}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-semibold">
+                          {(() => {
+                            const t = (item.loan_type || '').toLowerCase();
+                            const n = (item.application_number || '').toUpperCase();
+                            if (t.includes('virtual') || n.startsWith('OSV') || n.startsWith('VLTX')) return 'Credit Limit';
+                            return 'Applied Amount';
+                          })()}
+                        </span>
+                        <span className="font-black text-slate-900 text-xs">
+                          {formattedAmount(item.required_amount || item.applied_amount || item.selected_amount || item.amount || 100000)}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block font-semibold">Applied Amount</span>
-                      <span className="font-black text-slate-900 text-xs">
-                        {formattedAmount(item.required_amount || item.applied_amount || item.selected_amount || item.amount || 100000)}
-                      </span>
-                    </div>
-                    <div className="col-span-2 flex justify-between items-center pt-2 border-t border-slate-200/70">
+
+                    {/* Row 2: Type-specific extras */}
+                    {(() => {
+                      const t = (item.loan_type || '').toLowerCase();
+                      const n = (item.application_number || '').toUpperCase();
+
+                      // Elite Cash Loan → show processing fee
+                      if (t.includes('elite') || n.startsWith('ECL')) {
+                        return (
+                          <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-200/70">
+                            <div>
+                              <span className="text-[10px] text-slate-400 block font-semibold">Processing Fee</span>
+                              <span className="font-black text-purple-700 text-xs">
+                                {formattedAmount(item.processing_fee || item.fee_amount || 999)}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 block font-semibold">Loan Tenure</span>
+                              <span className="font-black text-slate-900 text-xs">
+                                {item.loan_tenure ? `${item.loan_tenure} Months` : '—'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Urgent / Construction Loan → show purpose & partner
+                      if (t.includes('urgent') || t.includes('construction') || n.startsWith('UCL')) {
+                        return (
+                          <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-200/70">
+                            <div>
+                              <span className="text-[10px] text-slate-400 block font-semibold">Processing Fee</span>
+                              <span className="font-black text-amber-700 text-xs">
+                                {formattedAmount(item.processing_fee || item.fee_amount || 1499)}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 block font-semibold">Loan Tenure</span>
+                              <span className="font-black text-slate-900 text-xs">
+                                {item.loan_tenure ? `${item.loan_tenure} Months` : '—'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Virtual Loan → show card type and activation
+                      if (t.includes('virtual') || n.startsWith('OSV') || n.startsWith('VLTX')) {
+                        return (
+                          <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-200/70">
+                            <div>
+                              <span className="text-[10px] text-slate-400 block font-semibold">Card Type</span>
+                              <span className="font-black text-blue-700 text-xs">
+                                {item.card_type || item.virtual_card_type || 'Virtual Credit'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 block font-semibold">Activation Fee</span>
+                              <span className="font-black text-slate-900 text-xs">
+                                {formattedAmount(item.processing_fee || item.fee_amount || 299)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return null;
+                    })()}
+
+                    {/* Row 3: Status always at bottom */}
+                    <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/70">
                       <span className="text-slate-500 text-[11px] font-bold">Status:</span>
-                      <span
-                        className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${statusMeta.color}`}
-                      >
+                      <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${statusMeta.color}`}>
                         {statusMeta.label}
                       </span>
                     </div>
