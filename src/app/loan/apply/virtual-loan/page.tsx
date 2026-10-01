@@ -293,8 +293,6 @@ export default function VirtualLoanApplyPage() {
           if (p.full_name && !fullName) setFullName(p.full_name);
           if (p.mobile_number && !mobileNumber) setMobileNumber(p.mobile_number);
           if (p.email && !emailAddress) setEmailAddress(p.email);
-          if (p.aadhaar_number) setAadhaarNumber(p.aadhaar_number);
-          if (p.pan_number) setPanNumber(p.pan_number);
         }
       } catch (err) {}
     }
