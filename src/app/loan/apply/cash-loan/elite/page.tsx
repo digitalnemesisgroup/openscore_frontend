@@ -74,8 +74,8 @@ export default function EliteCashLoanApplyPage() {
         if (storedMobile) setMobileNumber(storedMobile);
 
         const res = await apiRequest('/loan/applicant-profile');
-        if (res && res.data) {
-          const p = res.data;
+        if (res && res.profile) {
+          const p = res.profile;
           if (p.full_name) setFullName(p.full_name);
           if (p.dob) setDob(p.dob);
           if (p.gender) setGender(p.gender);

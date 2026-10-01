@@ -103,6 +103,10 @@ export default function UrgentConstructionLoanFormPage() {
           }
           if (p.employment_type) setEmploymentType(p.employment_type);
           if (p.monthly_income) setMonthlyIncome(Number(p.monthly_income));
+          if (p.bank_name) setBankName(p.bank_name);
+          if (p.bank_account_number) setBankAccountNumber(p.bank_account_number);
+          if (p.ifsc_code) setBankIfsc(p.ifsc_code);
+          if (p.account_holder_name) setBankAccountHolder(p.account_holder_name);
         }
       } catch (err) {}
     }

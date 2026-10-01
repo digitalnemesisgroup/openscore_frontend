@@ -275,9 +275,10 @@ export default function VirtualLoanApplyPage() {
             } catch (e) {}
           }
         }
-        const [vRes, feeRes] = await Promise.allSettled([
+        const [vRes, feeRes, profileRes] = await Promise.allSettled([
           apiRequest('/settings/virtual-loan'),
           apiRequest('/settings/fee-config'),
+          apiRequest('/loan/applicant-profile'),
         ]);
 
         if (vRes.status === 'fulfilled' && vRes.value && vRes.value.data) {
@@ -286,6 +287,14 @@ export default function VirtualLoanApplyPage() {
         }
         if (feeRes.status === 'fulfilled' && feeRes.value && feeRes.value.data) {
           setFeeConfig(feeRes.value.data);
+        }
+        if (profileRes.status === 'fulfilled' && profileRes.value && profileRes.value.profile) {
+          const p = profileRes.value.profile;
+          if (p.full_name && !fullName) setFullName(p.full_name);
+          if (p.mobile_number && !mobileNumber) setMobileNumber(p.mobile_number);
+          if (p.email && !emailAddress) setEmailAddress(p.email);
+          if (p.aadhaar_number) setAadhaarNumber(p.aadhaar_number);
+          if (p.pan_number) setPanNumber(p.pan_number);
         }
       } catch (err) {}
     }

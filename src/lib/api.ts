@@ -38,6 +38,10 @@ export const resolveMediaUrl = (val?: any): string => {
     return `${host}/${cleanPath}`;
   }
 
+  if (cleanPath.startsWith('documents/')) {
+    return `${host}/storage/${cleanPath}`;
+  }
+
   if (!cleanPath.includes('/')) {
     return `${host}/storage/documents/${cleanPath}`;
   }
