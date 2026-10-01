@@ -293,11 +293,12 @@ export default function VirtualLoanApplyPage() {
   }, []);
 
   const getFeeForAmount = React.useCallback((amount: number) => {
-    if (feeConfig && feeConfig.virtual_loan_fee_value !== undefined) {
-      if (feeConfig.virtual_loan_fee_type === 'percentage') {
-        return Math.max(1, Math.round(amount * (Number(feeConfig.virtual_loan_fee_value) / 100)));
-      }
-      return Number(feeConfig.virtual_loan_fee_value);
+    if (feeConfig && feeConfig.virtual_loan_login_fee !== undefined) {
+      const login = Number(feeConfig.virtual_loan_login_fee) || 0;
+      const doc = Number(feeConfig.virtual_loan_doc_fee) || 0;
+      const verif = Number(feeConfig.virtual_loan_verification_fee) || 0;
+      const additional = (feeConfig.virtual_loan_additional_fees || []).reduce((sum: number, fee: any) => sum + (Number(fee.amount) || 0), 0);
+      return login + doc + verif + additional;
     }
     return feeStructure.find((f) => f.amount === amount)?.fee || 3000;
   }, [feeConfig, feeStructure]);
