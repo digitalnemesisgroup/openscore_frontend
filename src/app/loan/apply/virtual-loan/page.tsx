@@ -264,6 +264,17 @@ export default function VirtualLoanApplyPage() {
   useEffect(() => {
     async function fetchSettings() {
       try {
+        if (typeof window !== 'undefined') {
+          const userStr = localStorage.getItem('openscore_user') || localStorage.getItem('user');
+          if (userStr) {
+            try {
+              const user = JSON.parse(userStr);
+              if (user.name && !fullName) setFullName(user.name);
+              if ((user.phone || user.mobile) && !mobileNumber) setMobileNumber(user.phone || user.mobile);
+              if (user.email && !emailAddress) setEmailAddress(user.email);
+            } catch (e) {}
+          }
+        }
         const [vRes, feeRes] = await Promise.allSettled([
           apiRequest('/settings/virtual-loan'),
           apiRequest('/settings/fee-config'),
