@@ -800,69 +800,84 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-3">
-                {/* 1. Student Account */}
+                {/* 1. Student Account — Violet */}
                 <div
                   onClick={() => setAccountType('student')}
-                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
                     accountType === 'student'
-                      ? 'bg-purple-50 border-purple-600 shadow-md scale-[1.01]'
-                      : 'bg-white border-slate-200 hover:border-slate-300'
+                      ? 'bg-violet-50 border-violet-600 shadow-lg shadow-violet-100 scale-[1.02]'
+                      : 'bg-violet-50/40 border-violet-200 hover:border-violet-400 hover:bg-violet-50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold ${
-                      accountType === 'student' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-700'
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold shrink-0 transition-all ${
+                      accountType === 'student' ? 'bg-violet-600 text-white shadow-md shadow-violet-300' : 'bg-violet-100 text-violet-600'
                     }`}>
                       <GraduationCap className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-black text-slate-900">Student Account</h3>
-                      <p className="text-xs text-slate-500">Low CIBIL & nominal docs for education & personal needs</p>
+                      <h3 className="text-sm font-black text-violet-900">Student Account</h3>
+                      <p className="text-xs text-violet-600/80">Low CIBIL & nominal docs for education & personal needs</p>
                     </div>
+                    {accountType === 'student' && (
+                      <div className="ml-auto w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center shrink-0">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* 2. Personal Account */}
+                {/* 2. Personal Account — Blue */}
                 <div
                   onClick={() => setAccountType('personal')}
-                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
                     accountType === 'personal'
-                      ? 'bg-blue-50 border-blue-600 shadow-md scale-[1.01]'
-                      : 'bg-white border-slate-200 hover:border-slate-300'
+                      ? 'bg-blue-50 border-blue-600 shadow-lg shadow-blue-100 scale-[1.02]'
+                      : 'bg-blue-50/40 border-blue-200 hover:border-blue-400 hover:bg-blue-50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold ${
-                      accountType === 'personal' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold shrink-0 transition-all ${
+                      accountType === 'personal' ? 'bg-blue-600 text-white shadow-md shadow-blue-300' : 'bg-blue-100 text-blue-600'
                     }`}>
                       <User className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-black text-slate-900">Personal Account</h3>
-                      <p className="text-xs text-slate-500">Personal loans, salary & everyday financial services</p>
+                      <h3 className="text-sm font-black text-blue-900">Personal Account</h3>
+                      <p className="text-xs text-blue-600/80">Personal loans, salary & everyday financial services</p>
                     </div>
+                    {accountType === 'personal' && (
+                      <div className="ml-auto w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* 3. Business Account */}
+                {/* 3. Business Account — Emerald */}
                 <div
                   onClick={() => setAccountType('business')}
-                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
                     accountType === 'business'
-                      ? 'bg-indigo-50 border-indigo-600 shadow-md scale-[1.01]'
-                      : 'bg-white border-slate-200 hover:border-slate-300'
+                      ? 'bg-emerald-50 border-emerald-600 shadow-lg shadow-emerald-100 scale-[1.02]'
+                      : 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold ${
-                      accountType === 'business' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold shrink-0 transition-all ${
+                      accountType === 'business' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-300' : 'bg-emerald-100 text-emerald-600'
                     }`}>
                       <Briefcase className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-black text-slate-900">Business Account</h3>
-                      <p className="text-xs text-slate-500">MSME, commercial capital & business expansion finance</p>
+                      <h3 className="text-sm font-black text-emerald-900">Business Account</h3>
+                      <p className="text-xs text-emerald-600/80">MSME, commercial capital & business expansion finance</p>
                     </div>
+                    {accountType === 'business' && (
+                      <div className="ml-auto w-5 h-5 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
