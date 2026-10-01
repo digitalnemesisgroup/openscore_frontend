@@ -199,7 +199,7 @@ export default function MyLoansPage() {
     }
 
     if (type.includes('virtual') || appNo.startsWith('OSV')) {
-      router.push(`/loan/virtual-loan/dashboard`);
+      router.push(`/dashboard`);
       return;
     }
 

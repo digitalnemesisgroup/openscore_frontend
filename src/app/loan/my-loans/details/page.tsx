@@ -29,6 +29,7 @@ function LoanDetailsContent() {
   }, [appId]);
 
   const app = appData;
+  const isVirtual = app?.loan_type?.includes('virtual') || app?.application_number?.startsWith('OSV');
 
   const formattedAmount = (val: number) =>
     new Intl.NumberFormat('en-IN', {
@@ -73,13 +74,13 @@ function LoanDetailsContent() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 border border-red-100 font-black flex items-center justify-center text-xs">
-                {app.selected_partner_name ? app.selected_partner_name.charAt(0) : 'H'}
+                {isVirtual ? 'O' : (app.selected_partner_name ? app.selected_partner_name.charAt(0) : 'H')}
               </div>
               <div>
                 <h2 className="text-sm font-black text-slate-900">
-                  {app.selected_partner_name || 'HDFC Bank'}
+                  {isVirtual ? 'OpenScore Vault' : (app.selected_partner_name || 'HDFC Bank')}
                 </h2>
-                <p className="text-[11px] text-slate-500">Personal Loan</p>
+                <p className="text-[11px] text-slate-500">{isVirtual ? 'Virtual Credit Limit' : 'Personal Loan'}</p>
               </div>
             </div>
             <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
@@ -183,7 +184,7 @@ function LoanDetailsContent() {
                 <div className="w-6 h-6 rounded-full bg-blue-600 text-white font-black flex items-center justify-center text-[10px]">
                   4
                 </div>
-                <span className="font-bold text-blue-900">Under Review with Bank/Admin</span>
+                <span className="font-bold text-blue-900">Under Review with {isVirtual ? 'Admin' : 'Bank/Admin'}</span>
               </div>
               <span className="text-[10px] font-bold text-blue-700">In Progress</span>
             </div>
@@ -212,7 +213,9 @@ function LoanDetailsContent() {
         <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-2xl flex items-start gap-2.5 text-xs text-blue-900">
           <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
           <p className="text-[11px] leading-snug">
-            OpenScore is coordinating with the bank/lender to process your application. Final approval is subject to the lender&apos;s verification and terms.
+            {isVirtual
+              ? 'OpenScore is actively verifying your application. Final approval is subject to internal verification and terms.'
+              : 'OpenScore is coordinating with the bank/lender to process your application. Final approval is subject to the lender\'s verification and terms.'}
           </p>
         </div>
 

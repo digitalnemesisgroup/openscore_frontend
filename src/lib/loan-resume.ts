@@ -183,7 +183,7 @@ export function getResumeStepDetails(app: LoanAppRecord): ResumeStepInfo {
         stepNumber: 3,
         stepTitle: 'Virtual Credit Limit Active',
         progressPercent: 100,
-        routeUrl: '/loan/virtual-loan/dashboard',
+        routeUrl: '/dashboard',
         actionText: 'View Virtual Dashboard →',
         isCompleted: true,
       };

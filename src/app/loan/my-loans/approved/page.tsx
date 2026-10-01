@@ -29,6 +29,7 @@ function LoanApprovedContent() {
   }, [appId]);
 
   const app = appData;
+  const isVirtual = app?.loan_type?.includes('virtual') || app?.application_number?.startsWith('OSV');
 
   const formattedAmount = (val: number) =>
     new Intl.NumberFormat('en-IN', {
@@ -96,13 +97,13 @@ function LoanApprovedContent() {
           <div className="flex justify-between items-center pb-2 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-lg bg-red-50 text-red-600 font-black flex items-center justify-center text-xs">
-                {app.selected_partner_name ? app.selected_partner_name.charAt(0) : 'H'}
+                {isVirtual ? 'O' : (app.selected_partner_name ? app.selected_partner_name.charAt(0) : 'H')}
               </div>
               <div>
                 <h3 className="text-xs font-black text-slate-900">
-                  {app.selected_partner_name || 'HDFC Bank'}
+                  {isVirtual ? 'OpenScore Vault' : (app.selected_partner_name || 'HDFC Bank')}
                 </h3>
-                <p className="text-[10px] text-slate-500">Personal Loan</p>
+                <p className="text-[10px] text-slate-500">{isVirtual ? 'Virtual Credit Limit' : 'Personal Loan'}</p>
               </div>
             </div>
             <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
