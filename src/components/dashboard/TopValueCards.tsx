@@ -13,11 +13,11 @@ interface TopValueCardsProps {
 export default function TopValueCards({
   onOpenEliteValue,
   onOpenVaultCard,
-  eliteValue = 30000,
-  vaultValue = 30000,
+  eliteValue = 0,
+  vaultValue = 0,
 }: TopValueCardsProps) {
-  const displayElite = Number(eliteValue) > 0 ? Number(eliteValue) : 30000;
-  const displayVault = Number(vaultValue) > 0 ? Number(vaultValue) : (Number(eliteValue) > 0 ? Number(eliteValue) : 30000);
+  const displayElite = Number(eliteValue) || 0;
+  const displayVault = Number(vaultValue) || 0;
 
   return (
     <div className="grid grid-cols-2 gap-3">
