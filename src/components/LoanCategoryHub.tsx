@@ -343,7 +343,8 @@ export default function LoanCategoryHub({
               </button>
             </div>
 
-            {/* TYPE 2: STANDARD CONSTRUCTION LOAN (CIBIL TIER-BASED) */}
+            {/* TYPE 2: STANDARD CONSTRUCTION LOAN (CIBIL TIER-BASED) - HIDDEN BY REQUEST */}
+            {/*
             <div
               onClick={() => router.push('/loan/apply/construction-loan')}
               className="bg-gradient-to-br from-emerald-50 via-emerald-50/50 to-white border-2 border-emerald-200 hover:border-emerald-500 rounded-3xl p-4 space-y-3 cursor-pointer shadow-sm hover:shadow-md transition-all active:scale-[0.99] group"
@@ -389,6 +390,7 @@ export default function LoanCategoryHub({
                 </div>
               </div>
             </div>
+            */}
           </div>
         </div>
       )}
@@ -481,7 +483,8 @@ export default function LoanCategoryHub({
               </button>
             </div>
 
-            {/* TYPE 1: CASH LOAN (CIBIL TIERS) */}
+            {/* TYPE 1: CASH LOAN (CIBIL TIERS) - HIDDEN BY REQUEST */}
+            {/*
             <div
               onClick={() => {
                 setViewMode('CASH_LOAN_OPTIONS');
@@ -526,6 +529,7 @@ export default function LoanCategoryHub({
                 </div>
               </div>
             </div>
+            */}
 
             {/* TYPE 2: VIRTUAL LOAN */}
             <div
