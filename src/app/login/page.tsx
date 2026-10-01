@@ -235,7 +235,11 @@ export default function LoginPage() {
 
       if (res.token && res.user) {
         login(res.access_token || res.token, res.user, res.refresh_token);
-        router.push('/dashboard');
+        if (res.user.role === 'admin' || res.user.is_admin) {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (err: any) {
       if (err.locked || err.seconds_remaining || err.message?.includes('soft-banned') || err.message?.includes('3 failed attempts')) {

@@ -7,7 +7,7 @@ export default function AdminRootPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/admin/applications');
+    router.replace('/admin/dashboard');
   }, [router]);
 
   return null;
