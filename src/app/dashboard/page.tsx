@@ -35,47 +35,15 @@ export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  const [activeApps, setActiveApps] = useState<AllActiveApps>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('openscore_active_apps_cache');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed && typeof parsed === 'object') return parsed;
-        }
-      } catch (e) {}
-    }
-    return {
-      cashApp: null,
-      constructionApp: null,
-      cashResumeInfo: null,
-      constructionResumeInfo: null,
-      activeList: [],
-    };
+  const [activeApps, setActiveApps] = useState<AllActiveApps>({
+    cashApp: null,
+    constructionApp: null,
+    cashResumeInfo: null,
+    constructionResumeInfo: null,
+    activeList: [],
   });
-  const [loadingApp, setLoadingApp] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('openscore_active_apps_cache');
-        if (cached) return false;
-      } catch (e) {}
-    }
-    return false;
-  });
-  const [walletBalance, setWalletBalance] = useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('openscore_wallet_balance');
-        if (cached && Number(cached) > 0) return Number(cached);
-        const cardCache = localStorage.getItem('openscore_wallet_cache');
-        if (cardCache) {
-          const parsed = JSON.parse(cardCache);
-          if (parsed && Number(parsed.available_value) > 0) return Number(parsed.available_value);
-        }
-      } catch (e) {}
-    }
-    return 30000;
-  });
+  const [loadingApp, setLoadingApp] = useState<boolean>(true);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
 
   // Modal State Control
   const [activeModal, setActiveModal] = useState<
@@ -103,21 +71,11 @@ export default function DashboardPage() {
 
         if (apps.status === 'fulfilled' && apps.value) {
           setActiveApps(apps.value);
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('openscore_active_apps_cache', JSON.stringify(apps.value));
-            } catch (e) {}
-          }
         }
 
         if (cardRes.status === 'fulfilled' && cardRes.value && cardRes.value.data) {
-          const bal = Number(cardRes.value.data.available_value) || 30000;
+          const bal = Number(cardRes.value.data.available_value) || 0;
           setWalletBalance(bal);
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('openscore_wallet_balance', String(bal));
-            } catch (e) {}
-          }
         }
       } catch (e) {
         console.error('Failed to load active applications:', e);
