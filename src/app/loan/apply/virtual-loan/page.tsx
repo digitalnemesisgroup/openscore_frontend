@@ -39,8 +39,16 @@ import {
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 
+import Lottie from 'lottie-react';
+import findingAnimation from '../../../../../public/animations/finding.json';
+import searchingAnimation from '../../../../../public/animations/searching.json';
+
 export default function VirtualLoanApplyPage() {
   const router = useRouter();
+
+  // Animation Stage
+  const [animationStage, setAnimationStage] = useState<'finding' | 'searching' | null>(null);
+
 
   // Multi-step state: 1 = Apply & Select Amount/Details, 2 = KYC & Documents, 3 = Approved/Booked & Pay Fee
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -402,25 +410,34 @@ export default function VirtualLoanApplyPage() {
         setAppStatus(res.data.status || 'loan_booked');
       }
 
-      // Enter Live Validation Screen
+      // Enter Live Validation Screen with new Lottie logic (2 mins total)
       setIsValidating(true);
-      setValidationProgress(12);
+      setAnimationStage('finding');
+      setValidationProgress(0);
 
-      // Smooth multi-stage verification timer
+      // 1 minute of finding
+      const findingDuration = 60000;
+      // 1 minute of searching
+      const searchingDuration = 60000;
+      const totalDuration = findingDuration + searchingDuration;
       const startTime = Date.now();
-      const totalDuration = 4200; // 4.2 seconds of realistic verification
 
       const interval = setInterval(() => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(100, Math.round((elapsed / totalDuration) * 100));
         setValidationProgress(progress);
 
-        if (progress >= 100) {
+        if (elapsed > findingDuration && elapsed <= totalDuration) {
+          setAnimationStage((prev) => (prev !== 'searching' ? 'searching' : prev));
+        }
+
+        if (elapsed >= totalDuration) {
           clearInterval(interval);
           setTimeout(() => {
             setIsValidating(false);
-            setCurrentStep(3); // Advance to Loan Approved / Booked step!
-          }, 600);
+            setAnimationStage(null);
+            setCurrentStep(3); // Advance to Loan Approved / Booked step
+          }, 500);
         }
       }, 100);
     } catch (err: any) {
@@ -898,145 +915,42 @@ export default function VirtualLoanApplyPage() {
         {/* VALIDATION IN PROGRESS SCREEN */}
         {isValidating && (
           <div className="space-y-5 py-2 animate-in fade-in duration-300">
-            {/* TOP SCANNER HERO CARD */}
-            <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white p-6 rounded-3xl text-center space-y-4 shadow-xl border border-blue-900/50 relative overflow-hidden">
-              {/* Background ambient glow circle */}
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
-              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
-
-              {/* Pulsing AI Scanner Visual */}
-              <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full border-2 border-blue-500/30 animate-ping" />
-                <div className="absolute inset-1 rounded-full border-2 border-t-blue-400 border-r-indigo-400 border-b-transparent border-l-transparent animate-spin" />
-                <div className="w-16 h-16 rounded-full bg-blue-600/20 backdrop-blur-md border border-blue-400/50 flex items-center justify-center text-blue-400 shadow-[0_0_30px_rgba(59,130,246,0.6)]">
-                  <ScanLine className="w-8 h-8 animate-pulse text-blue-300" />
-                </div>
+            {/* LOTTIE ANIMATION HERO CARD */}
+            <div className="bg-white p-6 rounded-3xl text-center space-y-4 shadow-md border border-slate-200 relative overflow-hidden flex flex-col items-center justify-center">
+              
+              <div className="w-full max-w-[200px] h-[200px] mx-auto flex items-center justify-center">
+                {animationStage === 'finding' ? (
+                  <Lottie animationData={findingAnimation} loop={true} />
+                ) : (
+                  <Lottie animationData={searchingAnimation} loop={true} />
+                )}
               </div>
 
               <div>
-                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 inline-block mb-1.5">
+                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 inline-block mb-1.5">
                   AI Underwriting Engine
                 </span>
-                <h2 className="text-lg font-black text-white">Validating Documents & KYC</h2>
-                <p className="text-xs text-blue-200/80 font-medium max-w-xs mx-auto mt-1">
-                  Please hold on while our automated verification system cross-references your submitted inputs.
+                <h2 className="text-lg font-black text-slate-900">
+                  {animationStage === 'finding' ? 'Finding Best Offers...' : 'Searching Lenders...'}
+                </h2>
+                <p className="text-xs text-slate-500 font-medium max-w-xs mx-auto mt-1">
+                  Please wait while we process your request. This may take up to 2 minutes.
                 </p>
               </div>
 
               {/* PROGRESS BAR */}
-              <div className="space-y-1.5 pt-1">
-                <div className="flex items-center justify-between text-xs font-bold text-blue-200">
+              <div className="space-y-1.5 pt-1 w-full">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-600">
                   <span>Verification Progress</span>
-                  <span className="font-mono text-emerald-400 font-black">{validationProgress}%</span>
+                  <span className="font-mono text-blue-600 font-black">{validationProgress}%</span>
                 </div>
-                <div className="w-full h-2.5 bg-slate-800/80 rounded-full overflow-hidden p-0.5 border border-blue-500/30">
+                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 rounded-full transition-all duration-300 ease-out"
+                    className="h-full bg-blue-600 rounded-full transition-all duration-300 ease-out"
                     style={{ width: `${validationProgress}%` }}
                   />
                 </div>
               </div>
-            </div>
-
-            {/* LIVE VERIFICATION CHECKLIST CARDS */}
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                  Real-Time Compliance Checks
-                </h3>
-                <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
-                  Automated Verification
-                </span>
-              </div>
-
-              {[
-                {
-                  title: 'Document Integrity & OCR Extraction',
-                  desc: 'Scanning uploaded Aadhaar & PAN images for biometric clarity',
-                  threshold: 25,
-                },
-                {
-                  title: 'Government Identity Cross-Match',
-                  desc: 'Cross-verifying applicant identity with UIDAI & Income Tax database',
-                  threshold: 50,
-                },
-                {
-                  title: 'Agent Biometric & Geolocation Match',
-                  desc: 'Validating live applicant selfie and agent GPS physical presence',
-                  threshold: 75,
-                },
-                {
-                  title: 'Virtual Credit Sanction & Underwriting',
-                  desc: `Authorizing pre-approved loan credit of ₹ ${selectedAmount.toLocaleString('en-IN')}`,
-                  threshold: 100,
-                },
-              ].map((check, idx, arr) => {
-                const isPassed = validationProgress >= check.threshold;
-                const isCurrent =
-                  validationProgress < check.threshold &&
-                  (idx === 0 || validationProgress >= arr[idx - 1].threshold);
-
-                return (
-                  <div
-                    key={idx}
-                    className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 shadow-2xs ${
-                      isPassed
-                        ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950'
-                        : isCurrent
-                        ? 'bg-blue-50/90 border-blue-300 text-blue-950 ring-2 ring-blue-500/15'
-                        : 'bg-slate-50/60 border-slate-200 text-slate-400 opacity-60'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 transition-all ${
-                          isPassed
-                            ? 'bg-emerald-500 text-white shadow-xs'
-                            : isCurrent
-                            ? 'bg-blue-600 text-white shadow-xs'
-                            : 'bg-slate-200 text-slate-400'
-                        }`}
-                      >
-                        {isPassed ? (
-                          <Check className="w-4 h-4 stroke-[3]" />
-                        ) : isCurrent ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Clock className="w-4 h-4" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p
-                          className={`text-xs font-bold truncate ${
-                            isPassed ? 'text-slate-900' : isCurrent ? 'text-blue-950 font-black' : 'text-slate-500'
-                          }`}
-                        >
-                          {check.title}
-                        </p>
-                        <p className="text-[10px] text-slate-500 truncate">{check.desc}</p>
-                      </div>
-                    </div>
-
-                    <span
-                      className={`text-[10px] font-black px-2.5 py-0.5 rounded-full shrink-0 ${
-                        isPassed
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                          : isCurrent
-                          ? 'bg-blue-100 text-blue-800 border border-blue-300 animate-pulse'
-                          : 'bg-slate-100 text-slate-400 border border-slate-200'
-                      }`}
-                    >
-                      {isPassed ? 'Verified ✓' : isCurrent ? 'Checking...' : 'Pending'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="text-center pt-2">
-              <span className="text-[11px] font-bold text-slate-500 flex items-center justify-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-emerald-600" /> 256-Bit SSL Encrypted Verification Engine
-              </span>
             </div>
           </div>
         )}
