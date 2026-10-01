@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MobileContainer from '@/components/MobileContainer';
 import LoanHeader from '@/components/LoanHeader';
@@ -31,8 +31,8 @@ export default function EliteCashLoanApplyPage() {
   const [errorMsg, setErrorMsg] = useState('');
 
   // 1. Amount & Purpose
-  const [requiredAmount, setRequiredAmount] = useState<number>(100000);
-  const [loanPurpose, setLoanPurpose] = useState<string>('Personal & Family Expenses');
+  const [requiredAmount, setRequiredAmount] = useState<number>(0);
+  const [loanPurpose, setLoanPurpose] = useState<string>('');
 
   // 2. Personal & KYC Details
   const [fullName, setFullName] = useState('');
@@ -50,9 +50,9 @@ export default function EliteCashLoanApplyPage() {
   // 3. Income Details
   const [employmentType, setEmploymentType] = useState('Salaried');
   const [companyName, setCompanyName] = useState('');
-  const [monthlyIncome, setMonthlyIncome] = useState<string>('35000');
+  const [monthlyIncome, setMonthlyIncome] = useState<string>('');
   const [existingEmi, setExistingEmi] = useState<string>('0');
-  const [workExperience, setWorkExperience] = useState('2+ Years');
+  const [workExperience, setWorkExperience] = useState('');
 
   // 4. Simple Documents (Base64 / metadata)
   const [docs, setDocs] = useState<{ [key: string]: { name: string; preview: string; size: string } }>({});
@@ -60,49 +60,12 @@ export default function EliteCashLoanApplyPage() {
 
   // 5. Disbursement Bank Details
   const [bankAccountHolderName, setBankAccountHolderName] = useState('');
-  const [bankName, setBankName] = useState('State Bank of India');
+  const [bankName, setBankName] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [confirmAccountNumber, setConfirmAccountNumber] = useState('');
   const [bankIfscCode, setBankIfscCode] = useState('');
   const [bankAccountType, setBankAccountType] = useState('Savings');
 
-  // Pre-fill existing user profile if available
-  useEffect(() => {
-    async function loadProfile() {
-      try {
-        const storedMobile = typeof window !== 'undefined' ? localStorage.getItem('user_mobile') : null;
-        if (storedMobile) setMobileNumber(storedMobile);
-
-        const res = await apiRequest('/loan/applicant-profile');
-        if (res && res.profile) {
-          const p = res.profile;
-          if (p.full_name) setFullName(p.full_name);
-          if (p.dob) setDob(p.dob);
-          if (p.gender) setGender(p.gender);
-          if (p.mobile_number) setMobileNumber(p.mobile_number);
-          if (p.email) setEmail(p.email);
-          if (p.pan_number) setPanNumber(p.pan_number);
-          if (p.aadhaar_number) setAadhaarNumber(p.aadhaar_number);
-          if (p.address) setAddress(p.address);
-          if (p.city) setCity(p.city);
-          if (p.state) setState(p.state);
-          if (p.pin_code) setPinCode(p.pin_code);
-          if (p.employment_type) setEmploymentType(p.employment_type);
-          if (p.company_name) setCompanyName(p.company_name);
-          if (p.monthly_income) setMonthlyIncome(p.monthly_income.toString());
-          if (p.bank_account_holder_name) setBankAccountHolderName(p.bank_account_holder_name);
-          else if (p.full_name) setBankAccountHolderName(p.full_name);
-          if (p.bank_name) setBankName(p.bank_name);
-          if (p.bank_account_number) {
-            setBankAccountNumber(p.bank_account_number);
-            setConfirmAccountNumber(p.bank_account_number);
-          }
-          if (p.bank_ifsc_code) setBankIfscCode(p.bank_ifsc_code);
-        }
-      } catch (err) {}
-    }
-    loadProfile();
-  }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, key: string) => {
     const file = e.target.files?.[0];
@@ -257,7 +220,13 @@ export default function EliteCashLoanApplyPage() {
         monthly_income: parseFloat(monthlyIncome),
         existing_emi: parseFloat(existingEmi) || 0,
         work_experience: workExperience,
-        documents_uploaded: docs,
+        // Strip base64 preview data - Hostinger WAF blocks large payloads
+        documents_uploaded: Object.fromEntries(
+          Object.entries(docs).map(([key, val]: [string, any]) => [
+            key,
+            { name: val.name, path: val.path, size: val.size, uploaded: val.uploaded }
+          ])
+        ),
         bank_account_holder_name: bankAccountHolderName.trim(),
         bank_name: bankName.trim(),
         bank_account_number: bankAccountNumber.trim(),

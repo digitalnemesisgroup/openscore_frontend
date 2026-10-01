@@ -70,7 +70,7 @@ export default function VirtualLoanDashboardPage() {
   const isActive = dashboardData?.is_active ?? true;
 
   const usedPercent = Math.min(100, Math.round((usedAmt / approvedAmt) * 100));
-  const displayName = user?.name || 'Avisekh Kumar Tewari';
+  const displayName = user?.name || '';
 
   return (
     <MobileContainer>
@@ -117,11 +117,10 @@ export default function VirtualLoanDashboardPage() {
                 </div>
 
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-black uppercase shadow-xs border ${
-                    isActive
+                  className={`px-3 py-1 rounded-full text-xs font-black uppercase shadow-xs border ${isActive
                       ? 'bg-emerald-500 text-white border-emerald-400'
                       : 'bg-amber-500 text-slate-950 border-amber-400'
-                  }`}
+                    }`}
                 >
                   {isActive ? 'Active' : 'Booked'}
                 </span>
@@ -196,11 +195,10 @@ export default function VirtualLoanDashboardPage() {
                   }
                   setScanQrOpen(true);
                 }}
-                className={`py-3.5 px-4 rounded-2xl font-black text-xs shadow-md flex items-center justify-center gap-2 transition-all active:scale-[0.99] ${
-                  !isActive
+                className={`py-3.5 px-4 rounded-2xl font-black text-xs shadow-md flex items-center justify-center gap-2 transition-all active:scale-[0.99] ${!isActive
                     ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-pointer'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
+                  }`}
               >
                 <QrCode className="w-4 h-4" />
                 <span>{isActive ? 'Scan & Pay' : '🔒 Scan & Pay (Locked)'}</span>

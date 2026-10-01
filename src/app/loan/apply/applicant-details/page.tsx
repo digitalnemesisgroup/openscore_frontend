@@ -32,7 +32,7 @@ function ApplicantDetailsForm() {
     aadhaar_number: '',
     gender: 'Male',
     employment_type: 'Salaried',
-    monthly_income: '50000',
+    monthly_income: '',
     required_amount: loanType === 'no_cibil' ? '150000' : loanType === 'low_cibil' ? '200000' : '1000000',
   });
 
@@ -68,6 +68,8 @@ function ApplicantDetailsForm() {
               mobile_number: appRecord.mobile_number || prev.mobile_number,
               pan_number: appRecord.pan_number || prev.pan_number,
               aadhaar_number: appRecord.aadhaar_number || prev.aadhaar_number,
+              dob: appRecord.dob || prev.dob,
+              gender: appRecord.gender || prev.gender,
               monthly_income: appRecord.monthly_income ? String(appRecord.monthly_income) : prev.monthly_income,
               required_amount: appRecord.required_amount ? String(appRecord.required_amount) : prev.required_amount,
             }));
@@ -75,40 +77,20 @@ function ApplicantDetailsForm() {
           return;
         }
 
-        // If no application exists in DB, auto-create a draft row right now so loan ID is generated immediately!
-        const reqMobile = user?.mobile || '9123828516';
-        const reqName = user?.name || 'Applicant';
-        const reqEmail = user?.email || `user${reqMobile}@msmeloan.sbs`;
-
-        const res = await apiRequest('/loan/apply', {
-          method: 'POST',
-          body: JSON.stringify({
-            loan_type: loanType,
-            requested_amount: 150000,
-            required_amount: 150000,
-            tenure_months: 24,
-            full_name: reqName,
-            dob: '1995-01-01',
-            mobile_number: reqMobile,
-            email: reqEmail,
-            pan_number: 'ABCDE1234F',
-            aadhaar_number: '123456789012',
-            gender: 'Male',
-            employment_type: 'Salaried',
-            monthly_income: 50000,
-            consent_accepted: true,
-          }),
-        });
-
-        if (res.data && res.data.id) {
-          const newId = res.data.id.toString();
-          setAppId(newId);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('active_loan_app_id', newId);
-          }
+        // If no active draft, fetch historical profile to auto-fill (no hardcoded fake data auto-creation)
+        const profileRes = await apiRequest('/loan/applicant-profile');
+        if (profileRes && profileRes.profile) {
+          const p = profileRes.profile;
+          setFormData((prev) => ({
+            ...prev,
+            pan_number: p.pan_number || prev.pan_number,
+            aadhaar_number: p.aadhaar_number || prev.aadhaar_number,
+            dob: p.dob || prev.dob,
+            gender: p.gender || prev.gender,
+          }));
         }
       } catch (e) {
-        console.error('Auto-draft loan creation failed:', e);
+        console.error('Failed to fetch applicant profile:', e);
       }
     }
 

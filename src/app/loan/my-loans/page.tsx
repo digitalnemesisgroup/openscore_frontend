@@ -59,7 +59,7 @@ export default function MyLoansPage() {
 
   const getLoanCategoryMeta = (item: any) => {
     const type = (item.loan_type || '').toLowerCase();
-    const appNo = (item.application_number || item.application_no || '').toUpperCase();
+    const appNo = (item.application_number || item.application_no || '').toString().trim().toUpperCase();
 
     if (type.includes('elite') || appNo.startsWith('ECL')) {
       return {
@@ -178,7 +178,7 @@ export default function MyLoansPage() {
 
   const handleSelectApp = (app: any) => {
     const type = (app.loan_type || '').toLowerCase();
-    const appNo = (app.application_number || app.application_no || '').toUpperCase();
+    const appNo = (app.application_number || app.application_no || '').toString().trim().toUpperCase();
 
     if (type.includes('elite') || appNo.startsWith('ECL')) {
       if (app.status === 'fee_payment_pending') {

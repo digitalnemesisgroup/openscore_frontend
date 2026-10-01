@@ -42,8 +42,8 @@ export default function WithdrawPage() {
     if (typeof window !== 'undefined') {
       try {
         const userStr = localStorage.getItem('openscore_user') || localStorage.getItem('user');
-        let userName = 'AVISEKH KUMAR TEWARI';
-        let userMobile = '8516';
+        let userName = '';
+        let userMobile = '';
         if (userStr) {
           const u = JSON.parse(userStr);
           if (u.name && u.name.trim() && u.name.toUpperCase() !== 'TEST') {
@@ -82,16 +82,16 @@ export default function WithdrawPage() {
           bank_account: 'IDFC FIRST Bank •••• 9123',
           status: 'VERIFYING',
         };
-      } catch (e) {}
+      } catch (e) { }
     }
     return {
       available_value: 30000,
       incremental_value: 0,
       daily_increment: 0.67,
       reward_holdings: 0,
-      card_number: '4734 8912 1805 8516',
-      card_holder: 'AVISEKH KUMAR TEWARI',
-      bank_account: 'IDFC FIRST Bank •••• 9123',
+      card_number: '',
+      card_holder: '',
+      bank_account: '',
       status: 'VERIFYING',
     };
   });
@@ -104,7 +104,7 @@ export default function WithdrawPage() {
           apiRequest('/user/wallet-card'),
         ]);
 
-        let name = walletData.card_holder || 'AVISEKH KUMAR TEWARI';
+        let name = walletData.card_holder || '';
         if (userRes.status === 'fulfilled' && userRes.value && userRes.value.name) {
           name = userRes.value.name.toUpperCase();
         }
@@ -125,7 +125,7 @@ export default function WithdrawPage() {
           if (typeof window !== 'undefined') {
             try {
               localStorage.setItem('openscore_wallet_cache', JSON.stringify(freshData));
-            } catch (e) {}
+            } catch (e) { }
           }
         } else if (name) {
           setWalletData((prev: WalletState) => ({
@@ -372,9 +372,8 @@ export default function WithdrawPage() {
           </div>
 
           {message && (
-            <div className={`p-3 rounded-2xl text-xs font-bold flex items-center gap-2 ${
-              message.includes('successfully') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
-            }`}>
+            <div className={`p-3 rounded-2xl text-xs font-bold flex items-center gap-2 ${message.includes('successfully') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+              }`}>
               {message.includes('successfully') ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
               <span>{message}</span>
             </div>

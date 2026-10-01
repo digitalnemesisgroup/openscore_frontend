@@ -29,7 +29,7 @@ function LoanApprovedContent() {
   }, [appId]);
 
   const app = appData;
-  const isVirtual = app?.loan_type?.includes('virtual') || app?.application_number?.startsWith('OSV');
+  const isVirtual = app?.loan_type?.includes('virtual') || (app?.application_number || app?.application_no || '').toString().trim().toUpperCase().startsWith('OSV');
 
   const formattedAmount = (val: number) =>
     new Intl.NumberFormat('en-IN', {

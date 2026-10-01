@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MobileContainer from '@/components/MobileContainer';
 import LoanHeader from '@/components/LoanHeader';
@@ -30,15 +30,15 @@ export default function UrgentConstructionLoanFormPage() {
   const [error, setError] = useState<string>('');
 
   // 1. Loan & Construction Project Details
-  const [loanAmount, setLoanAmount] = useState<number>(1000000);
-  const [constructionPurpose, setConstructionPurpose] = useState<string>('New Residential Construction');
-  const [estimatedProjectCost, setEstimatedProjectCost] = useState<number>(1500000);
+  const [loanAmount, setLoanAmount] = useState<number>(0);
+  const [constructionPurpose, setConstructionPurpose] = useState<string>('');
+  const [estimatedProjectCost, setEstimatedProjectCost] = useState<number>(0);
 
   // 2. Property Details
-  const [propertyType, setPropertyType] = useState<string>('Independent Residential Plot');
+  const [propertyType, setPropertyType] = useState<string>('');
   const [propertyAddress, setPropertyAddress] = useState<string>('');
   const [propertyCity, setPropertyCity] = useState<string>('');
-  const [propertyState, setPropertyState] = useState<string>('Maharashtra');
+  const [propertyState, setPropertyState] = useState<string>('');
   const [propertyPincode, setPropertyPincode] = useState<string>('');
 
   // 3. Applicant Personal Details
@@ -51,15 +51,15 @@ export default function UrgentConstructionLoanFormPage() {
   const [aadhaarNumber, setAadhaarNumber] = useState<string>('');
   const [residentialAddress, setResidentialAddress] = useState<string>('');
   const [city, setCity] = useState<string>('');
-  const [state, setState] = useState<string>('Maharashtra');
+  const [state, setState] = useState<string>('');
   const [pinCode, setPinCode] = useState<string>('');
 
   // 4. Income Details
   const [employmentType, setEmploymentType] = useState<string>('Salaried');
   const [companyName, setCompanyName] = useState<string>('');
-  const [monthlyIncome, setMonthlyIncome] = useState<number>(65000);
+  const [monthlyIncome, setMonthlyIncome] = useState<number>(0);
   const [existingEmi, setExistingEmi] = useState<number>(0);
-  const [workExperience, setWorkExperience] = useState<string>('3+ Years');
+  const [workExperience, setWorkExperience] = useState<string>('');
 
   // 5. Document Uploads State
   const [documents, setDocuments] = useState<{ [key: string]: { name: string; uploaded: boolean; base64?: string } }>({});
@@ -71,47 +71,6 @@ export default function UrgentConstructionLoanFormPage() {
   const [bankIfsc, setBankIfsc] = useState<string>('');
   const [bankAccountType, setBankAccountType] = useState<string>('Savings');
 
-  // Preload saved applicant profile if exists
-  useEffect(() => {
-    async function loadSavedProfile() {
-      try {
-        const res = await apiRequest('/loan/applicant-profile');
-        if (res && res.profile) {
-          const p = res.profile;
-          if (p.full_name) {
-            setFullName(p.full_name);
-            setBankAccountHolder(p.full_name);
-          }
-          if (p.dob) setDob(p.dob);
-          if (p.gender) setGender(p.gender);
-          if (p.mobile_number) setMobileNumber(p.mobile_number);
-          if (p.email) setEmail(p.email);
-          if (p.pan_number) setPanNumber(p.pan_number);
-          if (p.aadhaar_number) setAadhaarNumber(p.aadhaar_number);
-          if (p.address) setResidentialAddress(p.address);
-          if (p.city) {
-            setCity(p.city);
-            setPropertyCity(p.city);
-          }
-          if (p.state) {
-            setState(p.state);
-            setPropertyState(p.state);
-          }
-          if (p.pin_code) {
-            setPinCode(p.pin_code);
-            setPropertyPincode(p.pin_code);
-          }
-          if (p.employment_type) setEmploymentType(p.employment_type);
-          if (p.monthly_income) setMonthlyIncome(Number(p.monthly_income));
-          if (p.bank_name) setBankName(p.bank_name);
-          if (p.bank_account_number) setBankAccountNumber(p.bank_account_number);
-          if (p.ifsc_code) setBankIfsc(p.ifsc_code);
-          if (p.account_holder_name) setBankAccountHolder(p.account_holder_name);
-        }
-      } catch (err) {}
-    }
-    loadSavedProfile();
-  }, []);
 
   const handleFileUpload = (docKey: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -159,6 +118,14 @@ export default function UrgentConstructionLoanFormPage() {
     setLoading(true);
 
     try {
+      // Strip base64 preview data from documents before sending - Hostinger WAF blocks large payloads
+      const sanitizedDocs = Object.fromEntries(
+        Object.entries(documents).map(([key, val]: [string, any]) => [
+          key,
+          { name: val.name, path: val.path, size: val.size, uploaded: val.uploaded }
+        ])
+      );
+
       const res = await apiRequest('/loan/urgent-construction/apply', {
         method: 'POST',
         body: JSON.stringify({
@@ -186,7 +153,7 @@ export default function UrgentConstructionLoanFormPage() {
           monthly_income: monthlyIncome,
           existing_emi: existingEmi,
           work_experience: workExperience,
-          documents_uploaded: documents,
+          documents_uploaded: sanitizedDocs,
           bank_account_holder_name: bankAccountHolder.trim() || fullName.trim(),
           bank_name: bankName.trim(),
           bank_account_number: bankAccountNumber.trim(),

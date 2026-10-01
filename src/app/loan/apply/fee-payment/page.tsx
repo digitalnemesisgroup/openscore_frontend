@@ -158,11 +158,11 @@ function FeePaymentContent() {
     upi_id: 'flipflops@upi',
     upi_payee_name: 'OpenScore Finance',
     cash_loan_without_cibil_fee_type: 'fixed',
-    cash_loan_without_cibil_fee_value: 999,
+    cash_loan_without_cibil_fee_value: 0,
     cash_loan_low_cibil_fee_type: 'fixed',
-    cash_loan_low_cibil_fee_value: 999,
+    cash_loan_low_cibil_fee_value: 0,
     cash_loan_high_cibil_fee_type: 'fixed',
-    cash_loan_high_cibil_fee_value: 499,
+    cash_loan_high_cibil_fee_value: 0,
   });
 
   useEffect(() => {
@@ -187,22 +187,22 @@ function FeePaymentContent() {
   };
 
   // Priority: 1. Application-specific fee set by admin -> 2. Global fee config (3 tiers & fixed vs %)
-  let calculatedFee = 999;
+  let calculatedFee = 0;
   if (appData?.processing_fee || appData?.fee_amount) {
     calculatedFee = Number(appData.processing_fee || appData.fee_amount);
   } else if (feeConfig) {
     let feeType = 'fixed';
-    let rateOrVal = 999;
+    let rateOrVal = 0;
 
     if (loanType === 'good_cibil') {
       feeType = feeConfig.cash_loan_high_cibil_fee_type || feeConfig.cash_loan_fee_type || 'fixed';
-      rateOrVal = Number(feeConfig.cash_loan_high_cibil_fee_value ?? feeConfig.cash_loan_good_cibil_fee_value ?? 499);
+      rateOrVal = Number(feeConfig.cash_loan_high_cibil_fee_value ?? feeConfig.cash_loan_good_cibil_fee_value ?? 0);
     } else if (loanType === 'without_cibil') {
       feeType = feeConfig.cash_loan_without_cibil_fee_type || feeConfig.cash_loan_fee_type || 'fixed';
-      rateOrVal = Number(feeConfig.cash_loan_without_cibil_fee_value ?? feeConfig.cash_loan_fee_value ?? 999);
+      rateOrVal = Number(feeConfig.cash_loan_without_cibil_fee_value ?? feeConfig.cash_loan_fee_value ?? 0);
     } else {
       feeType = feeConfig.cash_loan_low_cibil_fee_type || feeConfig.cash_loan_fee_type || 'fixed';
-      rateOrVal = Number(feeConfig.cash_loan_low_cibil_fee_value ?? 999);
+      rateOrVal = Number(feeConfig.cash_loan_low_cibil_fee_value ?? 0);
     }
 
     if (feeType === 'percentage') {
@@ -215,7 +215,9 @@ function FeePaymentContent() {
 
   const upiId = appData?.payment_upi_id || appData?.upi_id || feeConfig?.upi_id || 'flipflops@upi';
   const payeeName = appData?.upi_payee_name || feeConfig?.upi_payee_name || 'OpenScore Finance';
-  const feeAmountNumber = calculatedFee;
+  const baseFee = calculatedFee;
+  const gstAmount = Math.round(baseFee * 0.18);
+  const feeAmountNumber = baseFee + gstAmount;
   const feeAmount = `₹${feeAmountNumber.toLocaleString('en-IN')}.00`;
   const upiPayUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${feeAmountNumber}&cu=INR`;
   const qrCodeImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(upiPayUrl)}`;
@@ -252,10 +254,14 @@ function FeePaymentContent() {
         {/* Amount Box */}
         <div className="bg-gradient-to-tr from-purple-800 via-indigo-800 to-blue-800 text-white p-5 rounded-3xl shadow-md text-center space-y-1 relative overflow-hidden">
           <span className="text-[10px] font-extrabold uppercase text-purple-200 tracking-wider">
-            APPLICABLE PROCESSING FEE
+            TOTAL PROCESSING FEE
           </span>
           <h2 className="text-3xl font-black">{feeAmount}</h2>
-          <p className="text-[11px] text-purple-100 flex items-center justify-center gap-1 font-semibold">
+          <div className="flex justify-center gap-4 text-[10px] text-purple-200 font-medium mt-1">
+            <span>Base Fee: ₹{baseFee}</span>
+            <span>+ 18% GST: ₹{gstAmount}</span>
+          </div>
+          <p className="text-[11px] text-purple-100 flex items-center justify-center gap-1 font-semibold mt-2">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> 100% Secure Transaction • Admin Verification Required
           </p>
         </div>

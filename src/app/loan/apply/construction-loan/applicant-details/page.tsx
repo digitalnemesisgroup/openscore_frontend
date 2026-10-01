@@ -19,12 +19,12 @@ function ConstructionApplicantForm() {
     mobile_number: '',
     dob: '',
     pan_number: '',
-    aadhaar_number: '123456789012',
+    aadhaar_number: '',
     residential_address: '',
 
     // 2. Occupation & Income
     occupation: 'Salaried',
-    monthly_income: '60000',
+    monthly_income: '',
     existing_emi: '0',
 
     // 3. Property & Construction Details
@@ -80,39 +80,19 @@ function ConstructionApplicantForm() {
           return;
         }
 
-        const reqMobile = user?.mobile || '9123828516';
-        const reqName = user?.name || 'Applicant';
-        const reqEmail = user?.email || `user${reqMobile}@msmeloan.sbs`;
-
-        const res = await apiRequest('/loan/apply', {
-          method: 'POST',
-          body: JSON.stringify({
-            loan_type: 'construction_loan',
-            requested_amount: 1500000,
-            required_amount: 1500000,
-            tenure_months: 120,
-            full_name: reqName,
-            dob: '1995-01-01',
-            mobile_number: reqMobile,
-            email: reqEmail,
-            pan_number: 'ABCDE1234F',
-            aadhaar_number: '123456789012',
-            gender: 'Male',
-            employment_type: 'Salaried',
-            monthly_income: 60000,
-            consent_accepted: true,
-          }),
-        });
-
-        if (res.data && res.data.id) {
-          const newId = res.data.id.toString();
-          setAppId(newId);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('active_loan_app_id', newId);
-          }
+        // Fetch historical profile
+        const profileRes = await apiRequest('/loan/applicant-profile');
+        if (profileRes && profileRes.profile) {
+          const p = profileRes.profile;
+          setFormData((prev) => ({
+            ...prev,
+            pan_number: p.pan_number || prev.pan_number,
+            aadhaar_number: p.aadhaar_number || prev.aadhaar_number,
+            dob: p.dob || prev.dob,
+          }));
         }
       } catch (e) {
-        console.error('Auto-draft construction loan creation failed:', e);
+        console.error('Failed to fetch applicant profile:', e);
       }
     }
 

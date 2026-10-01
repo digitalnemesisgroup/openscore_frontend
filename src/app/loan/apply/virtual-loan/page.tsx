@@ -39,9 +39,11 @@ import {
 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 
-import Lottie from 'lottie-react';
+import dynamic from 'next/dynamic';
 import findingAnimation from '../../../../../public/animations/finding.json';
 import searchingAnimation from '../../../../../public/animations/searching.json';
+
+const Lottie = dynamic(() => import('@/components/LottieAnimation'), { ssr: false }) as any;
 
 export default function VirtualLoanApplyPage() {
   const router = useRouter();
@@ -67,7 +69,7 @@ export default function VirtualLoanApplyPage() {
   const [mobileNumber, setMobileNumber] = useState<string>('');
   const [emailAddress, setEmailAddress] = useState<string>('');
   const [address, setAddress] = useState<string>('');
-  const [termsAccepted, setTermsAccepted] = useState<boolean>(true);
+  const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
   const [copiedUpi, setCopiedUpi] = useState<boolean>(false);
   const [utrInput, setUtrInput] = useState<string>('');
 
@@ -318,7 +320,9 @@ export default function VirtualLoanApplyPage() {
     return feeStructure.find((f) => f.amount === amount)?.fee || 3000;
   }, [feeConfig, feeStructure]);
 
-  const currentFee = getFeeForAmount(selectedAmount);
+  const currentBaseFee = getFeeForAmount(selectedAmount);
+  const gstAmount = Math.round(currentBaseFee * 0.18);
+  const currentFee = currentBaseFee + gstAmount;
 
 
   // Submit Step 1: Select Amount & Basic Details
@@ -563,9 +567,6 @@ export default function VirtualLoanApplyPage() {
                         </div>
                         <div>
                           <p className="text-sm font-black text-slate-900">₹ {item.amount.toLocaleString('en-IN')}</p>
-                          <p className="text-[11px] text-slate-500 font-semibold">
-                            {feeLabel}: ₹ {getFeeForAmount(item.amount).toLocaleString('en-IN')}
-                          </p>
                         </div>
                       </div>
 
@@ -588,10 +589,6 @@ export default function VirtualLoanApplyPage() {
               <div className="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-200">
                 <span className="text-slate-600">Loan Amount</span>
                 <span className="text-slate-900 font-black">₹ {selectedAmount.toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-bold pt-1">
-                <span className="text-slate-600">{feeLabel}</span>
-                <span className="text-blue-700 font-black">₹ {currentFee.toLocaleString('en-IN')}</span>
               </div>
             </div>
 
@@ -920,18 +917,15 @@ export default function VirtualLoanApplyPage() {
               
               <div className="w-full max-w-[200px] h-[200px] mx-auto flex items-center justify-center">
                 {animationStage === 'finding' ? (
-                  <Lottie animationData={findingAnimation} loop={true} />
+                  <Lottie animationData={findingAnimation} loop={true} style={{ width: '100%', height: '100%' }} />
                 ) : (
-                  <Lottie animationData={searchingAnimation} loop={true} />
+                  <Lottie animationData={searchingAnimation} loop={true} style={{ width: '100%', height: '100%' }} />
                 )}
               </div>
 
               <div>
-                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 inline-block mb-1.5">
-                  AI Underwriting Engine
-                </span>
                 <h2 className="text-lg font-black text-slate-900">
-                  {animationStage === 'finding' ? 'Finding Best Offers...' : 'Searching Lenders...'}
+                  {animationStage === 'finding' ? 'Verifying Documents...' : 'Searching Lenders...'}
                 </h2>
                 <p className="text-xs text-slate-500 font-medium max-w-xs mx-auto mt-1">
                   Please wait while we process your request. This may take up to 2 minutes.
@@ -1296,9 +1290,9 @@ export default function VirtualLoanApplyPage() {
               </div>
 
               {(() => {
-                const loginFee = feeConfig?.virtual_loan_login_fee ?? 100;
-                const docFee = feeConfig?.virtual_loan_doc_fee ?? 100;
-                const riskFee = feeConfig?.virtual_loan_verification_fee ?? 99;
+                const loginFee = feeConfig?.virtual_loan_login_fee ?? 0;
+                const docFee = feeConfig?.virtual_loan_doc_fee ?? 0;
+                const riskFee = feeConfig?.virtual_loan_verification_fee ?? 0;
                 return (
                   <div className="space-y-2.5 text-xs">
                     <div className="flex items-center justify-between text-slate-600 font-medium">
@@ -1322,7 +1316,15 @@ export default function VirtualLoanApplyPage() {
                       </div>
                     ))}
 
-                    <div className="pt-2.5 border-t border-dashed border-slate-200 flex items-center justify-between text-sm font-black text-blue-950">
+                    <div className="pt-2.5 border-t border-dashed border-slate-200 flex items-center justify-between text-sm font-medium text-slate-600">
+                      <span>Total Base Fee</span>
+                      <span>₹{Number(currentBaseFee).toLocaleString('en-IN')}.00</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm font-medium text-slate-600 mt-1">
+                      <span>GST (18%)</span>
+                      <span>₹{Number(gstAmount).toLocaleString('en-IN')}.00</span>
+                    </div>
+                    <div className="pt-2.5 border-t border-dashed border-slate-200 flex items-center justify-between text-sm font-black text-blue-950 mt-1">
                       <span>Total Payable Amount</span>
                       <span className="text-lg text-blue-700 font-mono font-black">
                         ₹{Number(currentFee).toLocaleString('en-IN')}.00
