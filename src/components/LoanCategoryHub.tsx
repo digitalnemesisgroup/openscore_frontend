@@ -210,9 +210,9 @@ export default function LoanCategoryHub({
                   key={cat.id}
                   onClick={() => {
                     if (cat.id === 'construction_loan') {
-                      router.push('/loan/apply/construction-loan/urgent');
+                      setViewMode('CONSTRUCTION_SUBTYPES');
                     } else if (cat.id === 'personal_loan') {
-                      router.push('/loan/apply/cash-loan/elite');
+                      setViewMode('PERSONAL_SUBTYPES');
                     } else if (cat.isAvailable) {
                       onContinueLoan(cat.id);
                     } else {
