@@ -90,6 +90,7 @@ export default function AdminSettingsPage() {
     construction_loan_high_cibil_fee_value: 499,
     // Virtual Card / Loan / Voucher - Single Fee
     virtual_loan_login_fee: 100,
+    virtual_loan_doc_fee: 100,
     virtual_loan_verification_fee: 99,
     // Additional Dynamic Taxes/Fees
     cash_loan_additional_fees: [] as { label: string; amount: number }[],
