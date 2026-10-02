@@ -6,7 +6,7 @@ import MobileContainer from '@/components/MobileContainer';
 import LoanHeader from '@/components/LoanHeader';
 import LoanCategoryHub from '@/components/LoanCategoryHub';
 import CooldownLockCard from '@/components/CooldownLockCard';
-import ResumeLoanCard from '@/components/dashboard/ResumeLoanCard';
+
 import { getAllActiveLoanApplications, checkReapplicationCooldown, AllActiveApps, CooldownInfo } from '@/lib/loan-resume';
 import { RefreshCw } from 'lucide-react';
 
@@ -56,18 +56,7 @@ export default function LoanApplyPage() {
         ) : cooldownInfo.isLocked ? (
           /* RE-APPLICATION COOLDOWN ACTIVE CARD */
           <CooldownLockCard cooldownInfo={cooldownInfo} />
-        ) : (
-          /* ACTIVE LOAN APPLICATION RESUME CARDS (SHOWS BOTH IF BOTH ARE IN PROGRESS) */
-          <ResumeLoanCard
-            loadingApp={false}
-            cashApp={activeApps.cashApp}
-            constructionApp={activeApps.constructionApp}
-            cashResumeInfo={activeApps.cashResumeInfo}
-            constructionResumeInfo={activeApps.constructionResumeInfo}
-            activeList={activeApps.activeList}
-            hideEmptyBanner={true}
-          />
-        )}
+        ) : null}
 
         {/* LOAN CATEGORY SELECTOR */}
         <LoanCategoryHub
