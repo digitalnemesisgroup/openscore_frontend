@@ -8,7 +8,7 @@ import { getAllActiveLoanApplications, AllActiveApps } from '@/lib/loan-resume';
 
 // Modular Dashboard Components
 import HeaderBar from '@/components/dashboard/HeaderBar';
-import ResumeLoanCard from '@/components/dashboard/ResumeLoanCard';
+
 import TopValueCards from '@/components/dashboard/TopValueCards';
 import QuickActionsRow from '@/components/dashboard/QuickActionsRow';
 import SecureTransactionsBanner from '@/components/dashboard/SecureTransactionsBanner';
@@ -118,15 +118,6 @@ export default function DashboardPage() {
 
       {/* 2. Scrollable Body Content */}
       <div className="p-3.5 space-y-4 pb-28 bg-slate-50/50">
-        {/* Active Application Resume Card - Unified Single Banner */}
-        <ResumeLoanCard
-          loadingApp={loadingApp}
-          cashApp={activeApps.cashApp}
-          constructionApp={activeApps.constructionApp}
-          cashResumeInfo={activeApps.cashResumeInfo}
-          constructionResumeInfo={activeApps.constructionResumeInfo}
-          activeList={activeApps.activeList}
-        />
 
         {/* Top Elite Value & Vault Cards */}
         <TopValueCards
