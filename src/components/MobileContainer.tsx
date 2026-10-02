@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import BottomNav from '@/components/BottomNav';
+import Link from 'next/link';
 import { Phone, MapPin } from 'lucide-react';
 import PhoneSupportModal from '@/components/modals/PhoneSupportModal';
 import LocationStatusModal from '@/components/modals/LocationStatusModal';
@@ -99,13 +100,17 @@ export default function MobileContainer({ children, showNav, onScanQr }: MobileC
               <Phone className="w-5 h-5 sm:w-6 sm:h-6 fill-white" />
             </button>
 
-            <button
-              onClick={() => setShowLocationModal(true)}
-              title="Location Services"
-              className="absolute bottom-[96px] sm:bottom-[108px] right-4 z-[9999] w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-xl shadow-blue-600/40 active:scale-95 transition-all border-2 border-white pointer-events-auto cursor-pointer"
-            >
-              <MapPin className="w-5 h-5 sm:w-6 sm:h-6 fill-white" />
-            </button>
+            {/* Location Icon on Right (Hidden on /location map) */}
+            {pathname !== '/location' && (
+              <Link
+                href="/location"
+                title="Location / Stores"
+                className="absolute bottom-[96px] sm:bottom-[108px] right-4 z-[9999] w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white text-slate-600 hover:text-purple-600 flex items-center justify-center shadow-xl shadow-slate-200/50 active:scale-95 transition-all border-2 border-white pointer-events-auto cursor-pointer"
+              >
+                <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />
+              </Link>
+            )}
+
 
             {/* Bottom Navigation Bar */}
             <BottomNav onScanQr={handleScanQr} />

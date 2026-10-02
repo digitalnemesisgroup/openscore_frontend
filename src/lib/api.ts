@@ -200,6 +200,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}): P
 
   let response = await fetch(`${baseUrl}${endpoint}`, {
     credentials: options.credentials || 'same-origin',
+    cache: options.cache || 'no-store',
     ...options,
     headers,
   });
@@ -216,6 +217,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}): P
         headers['Authorization'] = `Bearer ${newAccessToken}`;
         response = await fetch(`${baseUrl}${endpoint}`, {
           credentials: options.credentials || 'same-origin',
+          cache: options.cache || 'no-store',
           ...options,
           headers,
         });
@@ -227,6 +229,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}): P
       headers['Authorization'] = `Bearer ${retryToken}`;
       response = await fetch(`${baseUrl}${endpoint}`, {
         credentials: options.credentials || 'same-origin',
+        cache: options.cache || 'no-store',
         ...options,
         headers,
       });

@@ -17,6 +17,10 @@ interface User {
   mobile?: string;
   role?: string;
   account_type?: string;
+  business_type?: string;
+  business_location_lat?: string;
+  business_location_lng?: string;
+  business_address?: string;
 }
 
 interface AuthContextType {

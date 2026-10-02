@@ -126,7 +126,7 @@ export default function AdminSettingsPage() {
 
   const fetchOtpSettings = async () => {
     try {
-      const res = await apiRequest('/admin/settings/otp');
+      const res = await apiRequest(`/admin/settings/otp?_t=${Date.now()}`);
       if (res && res.data) {
         setVoiceCallOtpEnabled(!!res.data.voice_call_otp_enabled);
         setDefaultOtpEnabled(!!res.data.default_otp_enabled);
@@ -136,7 +136,7 @@ export default function AdminSettingsPage() {
 
   const fetchFeeConfig = async () => {
     try {
-      const res = await apiRequest('/admin/settings/fee-config');
+      const res = await apiRequest(`/admin/settings/fee-config?_t=${Date.now()}`);
       if (res && res.data) {
         setFeeConfig({
           upi_id: res.data.upi_id || 'flipflops@upi',

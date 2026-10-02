@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { apiRequest } from '@/lib/api';
 import MobileContainer from '@/components/MobileContainer';
 import { MapPin, Building2, Store, Search, ArrowLeft, CheckCircle2, Crosshair } from 'lucide-react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
@@ -90,20 +91,60 @@ export default function LocationPage() {
 
   useEffect(() => {
     // If user is business and already has business data, we can skip the form.
-    const stored = localStorage.getItem('businessData');
-    if (stored) {
+    let populated = false;
+
+    // Check backend state first
+    if (user?.business_type) {
       setIsDataFilled(true);
-      const parsed = JSON.parse(stored);
-      setBusinessData(parsed.details);
-      setBusinessType(parsed.type);
-      setBusinessCategory(parsed.category);
-      if (parsed.details.lat && parsed.details.lng) {
-        setUserLocation({ lat: parsed.details.lat, lng: parsed.details.lng });
+      const parts = user.business_type.split(' - ');
+      setBusinessType(parts[0] || user.business_type);
+      setBusinessCategory(parts[1] || '');
+      
+      const lat = user.business_location_lat ? parseFloat(user.business_location_lat) : null;
+      const lng = user.business_location_lng ? parseFloat(user.business_location_lng) : null;
+      
+      setBusinessData({
+        name: user.name || '',
+        number: user.mobile || '',
+        gstin: '',
+        lat: lat,
+        lng: lng,
+        address: user.business_address || '',
+      });
+
+      if (lat && lng) {
+        setUserLocation({ lat, lng });
+      }
+      populated = true;
+    }
+
+    if (!populated) {
+      const stored = localStorage.getItem('businessData');
+      if (stored) {
+        setIsDataFilled(true);
+        const parsed = JSON.parse(stored);
+        setBusinessData({
+          ...parsed.details,
+          name: parsed.details.name || user?.name || '',
+          number: parsed.details.number || user?.mobile || '',
+        });
+        setBusinessType(parsed.type);
+        setBusinessCategory(parsed.category);
+        if (parsed.details.lat && parsed.details.lng) {
+          setUserLocation({ lat: parsed.details.lat, lng: parsed.details.lng });
+        }
+      } else if (user) {
+        // Prefill for first-time form
+        setBusinessData(prev => ({
+          ...prev,
+          name: prev.name || user.name || '',
+          number: prev.number || user.mobile || ''
+        }));
       }
     }
-  }, []);
+  }, [user]);
 
-  const handleSaveBusiness = () => {
+  const handleSaveBusiness = async () => {
     if (!businessData.lat || !businessData.lng) {
       alert("Please select your store location on the map.");
       return;
@@ -113,8 +154,28 @@ export default function LocationPage() {
       category: businessCategory,
       details: businessData
     };
-    localStorage.setItem('businessData', JSON.stringify(data));
-    setIsDataFilled(true);
+    
+    try {
+      if (user) {
+        await apiRequest('/user/business-profile', {
+          method: 'POST',
+          body: JSON.stringify({
+            business_type: `${businessType} - ${businessCategory}`,
+            business_location_lat: businessData.lat.toString(),
+            business_location_lng: businessData.lng.toString(),
+            business_address: businessData.name + (businessData.number ? `, Contact: ${businessData.number}` : '') + (businessData.gstin ? `, GSTIN: ${businessData.gstin}` : ''),
+          })
+        });
+      }
+      
+      localStorage.setItem('businessData', JSON.stringify(data));
+      setIsDataFilled(true);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to save profile on the server, but it is saved locally.");
+      localStorage.setItem('businessData', JSON.stringify(data));
+      setIsDataFilled(true);
+    }
   };
 
   const getUserLocation = () => {

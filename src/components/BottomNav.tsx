@@ -30,14 +30,6 @@ export default function BottomNav({ onScanQr }: BottomNavProps = {}) {
 
   return (
     <div className="fixed bottom-5 sm:bottom-6 left-3.5 right-3.5 z-[9999]">
-      {/* Location Icon on Top Right */}
-      <Link
-        href="/location"
-        title="Location / Stores"
-        className="absolute -top-14 right-2 w-11 h-11 bg-white rounded-full flex items-center justify-center shadow-lg border border-slate-200 text-slate-600 hover:text-purple-600 transition-all z-[10000] active:scale-95"
-      >
-        <MapPin className="w-5 h-5" />
-      </Link>
       <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-full px-2 py-1.5 flex justify-between items-center shadow-2xl shadow-purple-900/20 w-full mb-[env(safe-area-inset-bottom,0px)]">
         {/* 1. HOME ICON */}
       <Link

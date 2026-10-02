@@ -34,7 +34,13 @@ export default function LoginPage() {
       const isInactive = urlParams.get('reason') === 'inactive' || localStorage.getItem('inactivity_logout_reason');
 
       if (user && token && !isInactive) {
-        router.push('/dashboard');
+        if (user.role === 'admin' || user.role === 'super_admin') {
+          router.push('/admin/dashboard');
+        } else if (user.account_type === 'business' && !user.business_type) {
+          router.push('/location');
+        } else {
+          router.push('/dashboard');
+        }
         return;
       }
 
@@ -237,6 +243,8 @@ export default function LoginPage() {
         login(res.access_token || res.token, res.user, res.refresh_token);
         if (res.user.role === 'admin' || res.user.is_admin) {
           router.push('/admin/dashboard');
+        } else if (res.user.account_type === 'business' && !res.user.business_type) {
+          router.push('/location');
         } else {
           router.push('/dashboard');
         }
@@ -390,7 +398,11 @@ export default function LoginPage() {
 
       if (res.token && res.user) {
         login(res.access_token || res.token, res.user, res.refresh_token);
-        router.push('/dashboard');
+        if (accountType === 'business') {
+          router.push('/location');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Registration failed.');
@@ -942,7 +954,7 @@ export default function LoginPage() {
                 disabled={loading || !fullName || !email}
                 className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-2xl shadow-lg transition-all"
               >
-                {loading ? 'Completing Registration...' : 'Complete Registration & Go to Dashboard →'}
+                {loading ? 'Completing Registration...' : (accountType === 'business' ? 'Complete Registration & Setup Store →' : 'Complete Registration & Go to Dashboard →')}
               </button>
             </form>
           )}
